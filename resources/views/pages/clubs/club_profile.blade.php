@@ -66,7 +66,7 @@
                 <li>
                     <a href="{{ route('user.profile', $member->id) }}">{{ $member->username }}</a>
                     @if(auth()->user() && auth()->user()->canManageClub($club) && auth()->user()->id !== $member->id)
-                        <form action="{{ route('club.ban', $club->id) }}" method="POST" style="display:inline; margin-left:10px;">
+                        <form action="{{ route('club.ban', $club->id) }}" method="POST" class="inline-form">
                             @csrf
                             <input type="hidden" name="user_id" value="{{ $member->id }}">
                             <input type="submit" class="btn btn-delete" value="Забанить">

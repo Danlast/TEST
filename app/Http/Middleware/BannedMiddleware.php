@@ -11,7 +11,7 @@ class BannedMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && Auth::user()->role === 'ban') {
+        if (Auth::check() && Auth::user()->role === \App\Enums\UserRole::BAN) {
             if ($request->route()?->getName() === 'ban' || $request->path() === 'logout') {
                 return $next($request);
             }

@@ -9,11 +9,16 @@ use Illuminate\Support\Facades\Validator;
 
 class BookExchangeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $exchanges = BookExchange::with(['user', 'bookedByUser'])->latest()->get();
+        $exchanges = BookExchange::with(['user', 'bookedByUser'])->latest()->paginate(12);
+        $exchanges->appends($request->query());
+        $exchangeMarkers = BookExchange::query()
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get(['id', 'title', 'latitude', 'longitude', 'place']);
 
-        return view('pages.books.exchange_index', compact('exchanges'));
+        return view('pages.books.exchange_index', compact('exchanges', 'exchangeMarkers'));
     }
 
     public function create()
@@ -113,7 +118,7 @@ class BookExchangeController extends Controller
 
     public function destroy(BookExchange $exchange)
     {
-        if (! Auth::user() || (! $exchange->canBeManagedBy(Auth::user()) && ! in_array(Auth::user()->role, ['admin', 'moderator'], true))) {
+        if (! Auth::user() || (! $exchange->canBeManagedBy(Auth::user()) && ! Auth::user()->role?->isStaff())) {
             abort(403);
         }
 

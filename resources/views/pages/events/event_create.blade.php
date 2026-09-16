@@ -23,10 +23,10 @@
         {{-- Блок выбора места на карте --}}
         <div class="form-group">
             <label>Место проведения</label>
-            <div style="position: relative;">
+            <div class="map-field">
                 <input type="text" name="place" id="place-input" placeholder="Введите адрес или выберите на карте" value="{{ old('place') }}">
-                <div id="map" style="height: 350px; width: 100%; margin-top: 10px; border-radius: 12px; border: 1px solid #ddd;"></div>
-                <small style="color: #64748b;">Кликните по карте, чтобы указать точное место, или воспользуйтесь поиском адреса</small>
+                <div id="map" class="form-map form-map-create"></div>
+                <small class="form-help">Кликните по карте, чтобы указать точное место, или воспользуйтесь поиском адреса</small>
             </div>
             @error('place') <span class="error">* {{ $message }}</span> @enderror
 
@@ -54,7 +54,7 @@
                         <option value="{{ $value }}" {{ in_array($value, $selectedTags, true) ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach
                 </select>
-                <small style="color: #64748b; display: block; margin-top: 6px;">Можно выбрать несколько тегов. Удерживайте Ctrl/Cmd для выбора нескольких вариантов.</small>
+                <small class="form-help">Можно выбрать несколько тегов. Удерживайте Ctrl/Cmd для выбора нескольких вариантов.</small>
             </div>
             @error('tags') <span class="error">* {{ $message }}</span> @enderror
         </div>
@@ -85,39 +85,6 @@
 
 {{-- Leaflet CSS --}}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-    #map { z-index: 1; }
-    .search-container { margin-bottom: 5px; }
-    .search-container input {
-        width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-    }
-    .tag-select-wrap {
-        margin-top: 6px;
-    }
-    .tag-select {
-        width: 100%;
-        min-height: 180px;
-        padding: 10px 12px;
-        border: 1px solid #cbd5e1;
-        border-radius: 12px;
-        background: #fff;
-        color: #0f172a;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
-    }
-    .tag-select option {
-        padding: 8px 10px;
-        border-radius: 8px;
-        margin: 2px 0;
-    }
-    .tag-select option:checked {
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-        color: #fff;
-    }
-</style>
-
 {{-- Leaflet JS --}}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>

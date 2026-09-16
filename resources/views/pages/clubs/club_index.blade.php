@@ -1,11 +1,11 @@
 @extends('template.app')
 
 @section('page')
-<div class="container" style="margin-bottom: 60px;">
+<div class="container page-container">
     <div class="page-shell">
         <div class="page-header">
             <div>
-                <h2 class="section-title" style="margin: 0 0 8px;">Клубы</h2>
+                <h2 class="section-title page-title">Клубы</h2>
                 <p class="page-subtitle">Открывайте клубы и переходите на их страницы.</p>
             </div>
         </div>
@@ -17,7 +17,7 @@
                     <input type="text" name="q" value="{{ $query ?? '' }}" placeholder="Введите название клуба">
                 </div>
             </div>
-            <input type="submit" class="btn btn-outline" value="Найти" style="margin-top: 12px;">
+            <input type="submit" class="btn btn-outline form-action" value="Найти">
         </form>
 
         <div class="object-grid">
@@ -35,6 +35,7 @@
                 @endforeach
             @endif
         </div>
+        {{ $clubs->links() }}
     </div>
 </div>
 @endsection

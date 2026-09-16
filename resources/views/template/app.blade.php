@@ -15,5 +15,19 @@
         </div>
         @include('components.footer')
     </div>
+    <script>
+        document.querySelectorAll('.tag-filter').forEach((filter) => {
+            const count = filter.querySelector('[data-tag-count]');
+            const checkboxes = filter.querySelectorAll('input[type="checkbox"]');
+
+            if (!count) return;
+
+            const updateCount = () => {
+                count.textContent = `Выбрано: ${filter.querySelectorAll('input[type="checkbox"]:checked').length}`;
+            };
+
+            checkboxes.forEach((checkbox) => checkbox.addEventListener('change', updateCount));
+        });
+    </script>
 </body>
 </html>

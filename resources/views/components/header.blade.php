@@ -1,9 +1,9 @@
 <!-- ========== ХЕДЕР ========== -->
 <header class="header" id="site-header">
     <div class="header-inner">
-        <a href="{{ route('start') }}" class="logo">Книжный</a>
+        <a href="{{ route('home') }}" class="logo">Книжный</a>
         <div class="nav">
-            <a href="{{ route('start') }}">Главная</a>
+            <a href="{{ route('home') }}">Главная</a>
             <a href="{{ route('event.index') }}">Мероприятия</a>
             <a href="{{ route('club.index') }}">Клубы</a>
             <a href="{{ route('articles.index') }}">Статьи</a>
@@ -15,18 +15,18 @@
             @endguest
 
             @auth
-                @if(auth()->user()->role === 'club')
+                @if(auth()->user()->role === \App\Enums\UserRole::CLUB)
                     <a href="{{ route('club.profile', auth()->user()->id) }}">Профиль</a>
                 @else
                     <a href="{{ route('profile') }}">Профиль</a>
                 @endif
 
 
-                @if(auth()->user()->role === 'admin' || auth()->user()->role === 'club' || auth()->user()->role === 'club_moderator')
+                @if(auth()->user()->role?->isStaff() || auth()->user()->role?->managesClubContent())
                     <a href="{{ route('event.create') }}">Добавить мероприятие</a>
                 @endif
 
-                <form action="{{ route('logout') }}" method="POST" style="display: inline;">
+                <form action="{{ route('logout') }}" method="POST" class="logout-form">
                     @csrf
                     <input type="submit" value="Выйти">
                 </form>

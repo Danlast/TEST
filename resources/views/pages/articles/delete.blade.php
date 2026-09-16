@@ -4,7 +4,7 @@
 <section class="form-card">
     <h2>Удаление статьи</h2>
     <p>Вы уверены, что хотите удалить статью <strong>{{ $article->title }}</strong>?</p>
-    <form method="POST" action="{{ route('articles.destroy', $article) }}" style="margin-top: 16px;">
+    <form method="POST" action="{{ route('articles.destroy', $article) }}" class="section-top-sm">
         @csrf
         @method('DELETE')
         <button class="btn btn-delete">Удалить</button>

@@ -14,9 +14,9 @@
             <p><strong>Статус:</strong> {{ $exchange->status === 'booked' ? 'Забронировано' : 'Активно' }}</p>
 
             @if($exchange->latitude && $exchange->longitude)
-                <div style="margin-top: 16px;">
-                    <h4 style="margin-bottom: 8px;">Карта</h4>
-                    <div id="exchange-detail-map" style="height: 320px; width: 100%; border-radius: 16px; border: 1px solid #ddd;"></div>
+                <div class="section-top-sm">
+                    <h4 class="map-heading">Карта</h4>
+                    <div id="exchange-detail-map" class="map-frame map-frame-sm"></div>
                 </div>
             @endif
 
@@ -29,24 +29,24 @@
 
                 @if(! $isOwner)
                     @if($exchange->status !== 'booked')
-                        <form method="POST" action="{{ route('exchange.book', $exchange->id) }}" style="margin-top: 12px;" onsubmit="return confirm('Подтвердить бронь этого обмена?');">
+                        <form method="POST" action="{{ route('exchange.book', $exchange->id) }}" class="section-top-sm" onsubmit="return confirm('Подтвердить бронь этого обмена?');">
                             @csrf
                             <button class="btn btn-primary">Забронировать</button>
                         </form>
                     @elseif($exchange->booked_by_user_id === $currentUserId)
-                        <form method="POST" action="{{ route('exchange.unbook', $exchange->id) }}" style="margin-top: 12px;">
+                        <form method="POST" action="{{ route('exchange.unbook', $exchange->id) }}" class="section-top-sm">
                             @csrf
                             <button class="btn btn-outline">Отказаться от обмена</button>
                         </form>
                     @else
-                        <p style="color: #dc2626; margin-top: 12px;">Книга уже забронирована.</p>
+                        <p class="status-error section-top-sm">Книга уже забронирована.</p>
                     @endif
                 @else
-                    <p style="color: #64748b; margin-top: 12px;">Это ваше объявление, бронирование недоступно.</p>
+                    <p class="status-muted section-top-sm">Это ваше объявление, бронирование недоступно.</p>
                 @endif
 
                 @if(auth()->user()->canManageBookExchange($exchange))
-                    <div class="flex" style="margin-top: 12px;">
+                    <div class="flex section-top-sm">
                         <a href="{{ route('exchange.edit', $exchange->id) }}" class="btn btn-edit">Редактировать</a>
                         <a href="{{ route('exchange.delete', $exchange->id) }}" class="btn btn-delete">Удалить</a>
                     </div>

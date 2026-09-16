@@ -40,7 +40,7 @@
             <label>Координаты</label>
             <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude', $exchange->latitude) }}">
             <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude', $exchange->longitude) }}">
-            <div id="map" style="height: 300px; width: 100%; margin-top: 8px; border-radius: 12px; border: 1px solid #ddd;"></div>
+            <div id="map" class="form-map form-map-edit"></div>
             @error('latitude') <span class="error">* {{ $message }}</span> @enderror
             @error('longitude') <span class="error">* {{ $message }}</span> @enderror
         </div>

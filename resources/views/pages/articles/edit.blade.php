@@ -32,7 +32,7 @@
                         <option value="{{ $value }}" {{ in_array($value, $selectedTags, true) ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach
                 </select>
-                <small style="color: #64748b; display: block; margin-top: 6px;">Можно выбрать несколько тегов.</small>
+                <small class="form-help">Можно выбрать несколько тегов.</small>
             </div>
             @error('tags') <span class="error">* {{ $message }}</span> @enderror
         </div>
@@ -40,28 +40,4 @@
         <button class="btn btn-primary">Сохранить</button>
     </form>
 </section>
-<style>
-    .tag-select-wrap {
-        margin-top: 6px;
-    }
-    .tag-select {
-        width: 100%;
-        min-height: 140px;
-        padding: 10px 12px;
-        border: 1px solid #cbd5e1;
-        border-radius: 12px;
-        background: #fff;
-        color: #0f172a;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
-    }
-    .tag-select option {
-        padding: 8px 10px;
-        border-radius: 8px;
-        margin: 2px 0;
-    }
-    .tag-select option:checked {
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-        color: #fff;
-    }
-</style>
 @endsection

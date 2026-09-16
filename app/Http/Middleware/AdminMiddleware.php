@@ -11,7 +11,7 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::check() || Auth::user()->role !== 'admin') {
+        if (!Auth::check() || Auth::user()->role !== \App\Enums\UserRole::ADMIN) {
             abort(403, 'Доступ запрещён. Только для администраторов.');
         }
 

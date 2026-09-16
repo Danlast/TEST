@@ -44,7 +44,7 @@ class BookExchange extends Model
 
     public function canBeManagedBy(User $user): bool
     {
-        if (in_array($user->role, ['admin', 'moderator'], true)) {
+        if ($user->role?->isStaff()) {
             return true;
         }
 

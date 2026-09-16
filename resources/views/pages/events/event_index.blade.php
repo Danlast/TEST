@@ -1,20 +1,20 @@
 @extends('template.app')
 
 @section('page')
-<div class="container" style="margin-bottom: 60px;">
+<div class="container page-container">
     <div class="page-shell">
         <div class="page-header">
             <div>
-                <h2 class="section-title" style="margin: 0 0 8px;">Все мероприятия</h2>
+                <h2 class="section-title page-title">Все мероприятия</h2>
                 <p class="page-subtitle">Ищите события по дате, тегам и ключевому слову в одном удобном списке.</p>
             </div>
         </div>
 
         <form method="GET" class="filter-panel">
             <div class="filter-grid">
-                <div class="filter-field">
-                    <label>Поиск мероприятия</label>
-                    <input type="text" name="q" value="{{ $query ?? '' }}" placeholder="Введите название или место">
+                <div class="filter-field search-field">
+                    <label for="event-index-search">Поиск мероприятия</label>
+                    <input type="search" id="event-index-search" name="q" value="{{ $query ?? '' }}" placeholder="Название, место или тег" autocomplete="off">
                 </div>
 
                 <div class="filter-field">
@@ -36,16 +36,24 @@
                 </div>
             </div>
 
-            <div class="filter-field" style="margin-top: 12px;">
-                <label>Теги</label>
-                <select name="tags[]" class="tag-select" multiple size="6">
+            <fieldset class="filter-field tag-filter">
+                <legend>Теги <span class="tag-count" data-tag-count>Выбрано: {{ count($tags ?? []) }}</span></legend>
+                <div class="tag-options">
                     @foreach($availableTags ?? [] as $value => $label)
-                        <option value="{{ $value }}" {{ in_array($value, $tags ?? [], true) ? 'selected' : '' }}>{{ $label }}</option>
+                        <label class="tag-option">
+                            <input type="checkbox" name="tags[]" value="{{ $value }}" {{ in_array($value, $tags ?? [], true) ? 'checked' : '' }}>
+                            <span>{{ $label }}</span>
+                        </label>
                     @endforeach
-                </select>
-            </div>
+                </div>
+            </fieldset>
 
-            <input type="submit" class="btn btn-outline" value="Применить" style="margin-top: 12px;">
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Найти мероприятия</button>
+                @if(($query ?? '') !== '' || !empty($dateFrom) || !empty($dateTo) || !empty($tags ?? []))
+                    <a href="{{ route('event.index') }}" class="btn btn-outline">Сбросить фильтры</a>
+                @endif
+            </div>
         </form>
 
         <div class="object-grid">
@@ -68,6 +76,7 @@
                 <p>Мероприятий не найдено.</p>
             @endforelse
         </div>
+        {{ $events->links() }}
     </div>
 </div>
 @endsection

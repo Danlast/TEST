@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserRole;
 use App\Models\Article;
 use App\Models\Comment;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -15,7 +17,9 @@ class ArticleController extends Controller
         $query = trim((string) $request->input('q', ''));
         $selectedTags = array_values(array_filter(array_map('trim', (array) $request->input('tags', []))));
 
-        $articlesQuery = Article::query()->where('is_published', true)
+        $articlesQuery = Article::query()
+            ->with(['user', 'club'])
+            ->where('is_published', true)
             ->when($query !== '', function ($q) use ($query) {
                 $q->where(function ($sub) use ($query) {
                     $sub->where('title', 'like', '%' . $query . '%')
@@ -31,7 +35,8 @@ class ArticleController extends Controller
             })
             ->latest();
 
-        $articles = $articlesQuery->get();
+        $articles = $articlesQuery->paginate(12);
+        $articles->appends($request->query());
 
         return view('pages.articles.index', compact('articles', 'query', 'selectedTags'))
             ->with('availableTags', $this->availableTags());
@@ -48,7 +53,9 @@ class ArticleController extends Controller
 
     public function store(Request $request)
     {
-        if (! Auth::check()) {
+        $user = Auth::user();
+
+        if (! $user) {
             abort(403);
         }
 
@@ -61,12 +68,20 @@ class ArticleController extends Controller
         ]);
 
         $validated['tags'] = array_values(array_filter($validated['tags'] ?? []));
-        $validated['user_id'] = Auth::id();
+        $validated['user_id'] = $user->id;
+        $validated['club_id'] = null;
         $validated['is_published'] = true;
 
-        $user = Auth::user();
-        if (in_array($user->role, ['club', 'club_moderator'], true)) {
-            $validated['club_id'] = $user->club_id ?? $user->id;
+        if ($user->role === UserRole::CLUB) {
+            $validated['club_id'] = $user->id;
+        } elseif ($user->role === UserRole::CLUB_MODERATOR) {
+            abort_unless($user->club_id, 403, 'Для публикации статьи клубному модератору нужно назначить клуб.');
+            abort_unless(
+                User::query()->whereKey($user->club_id)->where('role', UserRole::CLUB)->exists(),
+                403,
+                'Указанный клуб недоступен.'
+            );
+            $validated['club_id'] = $user->club_id;
         }
 
         Article::create($validated);
@@ -76,7 +91,7 @@ class ArticleController extends Controller
 
     public function show(Article $article)
     {
-        $article->load(['user', 'comments.user']);
+        $article->load(['user', 'club', 'comments.user']);
 
         return view('pages.articles.show', compact('article'));
     }

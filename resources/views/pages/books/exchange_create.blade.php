@@ -20,10 +20,10 @@
 
         <div class="form-group">
             <label>Место проведения</label>
-            <div style="position: relative;">
+            <div class="map-field">
                 <input type="text" name="place" id="place-input" placeholder="Введите адрес или выберите на карте" value="{{ old('place') }}" required>
-                <div id="map" style="height: 350px; width: 100%; margin-top: 10px; border-radius: 12px; border: 1px solid #ddd;"></div>
-                <small style="color: #64748b;">Кликните по карте, чтобы указать точное место, или воспользуйтесь поиском адреса</small>
+                <div id="map" class="form-map form-map-create"></div>
+                <small class="form-help">Кликните по карте, чтобы указать точное место, или воспользуйтесь поиском адреса</small>
             </div>
             @error('place') <span class="error">* {{ $message }}</span> @enderror
         </div>

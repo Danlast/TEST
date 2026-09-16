@@ -48,7 +48,7 @@
                         <option value="{{ $value }}" {{ in_array($value, $selectedTags, true) ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach
                 </select>
-                <small style="color: #64748b; display: block; margin-top: 6px;">Можно выбрать несколько тегов. Удерживайте Ctrl/Cmd для выбора нескольких вариантов.</small>
+                <small class="form-help">Можно выбрать несколько тегов. Удерживайте Ctrl/Cmd для выбора нескольких вариантов.</small>
             </div>
             @error('tags')
                 <span class="error">* {{ $message }}</span>
@@ -75,7 +75,7 @@
             <label></label>Афиша (jpg/webp, до 50kb)</label>
             @if($event->image)
                 <div class="mb-2">
-                    <img src="{{ $event->image_url }}" alt="Текущая афиша" style="max-width: 220px; max-height: 180px; object-fit: cover;">
+                    <img src="{{ $event->image_url }}" alt="Текущая афиша" class="current-event-image">
                 </div>
             @endif
             <input type="file" name="image" accept=".jpg,.jpeg,.webp">

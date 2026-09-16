@@ -8,50 +8,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class EventController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
-        $query = trim((string) $request->input('q', ''));
-        $dateFrom = $request->input('date_from');
-        $dateTo = $request->input('date_to');
-        $sort = $request->input('sort', 'date');
-        $selectedTags = array_values(array_filter(array_map('trim', (array) $request->input('tags', []))));
-
-        $eventsQuery = Event::query()
-            ->when($query !== '', function ($q) use ($query) {
-                $q->where(function ($sub) use ($query) {
-                    $sub->where('title', 'like', '%' . $query . '%')
-                        ->orWhere('place', 'like', '%' . $query . '%')
-                        ->orWhere('description', 'like', '%' . $query . '%')
-                        ->orWhereJsonContains('tags', $query);
-                });
-            })
-            ->when(! empty($selectedTags), function ($q) use ($selectedTags) {
-                foreach ($selectedTags as $tag) {
-                    $q->whereJsonContains('tags', $tag);
-                }
-            });
-
-        if ($dateFrom) {
-            $eventsQuery->where('date', '>=', $dateFrom . ' 00:00:00');
-        }
-
-        if ($dateTo) {
-            $eventsQuery->where('date', '<=', $dateTo . ' 23:59:59');
-        }
-
-        if ($sort === 'popular') {
-            $eventsQuery->withCount('registrations')->orderByDesc('registrations_count');
-        } else {
-            $eventsQuery->orderBy('date');
-        }
-
-        $events = $eventsQuery->get();
+        [$eventsQuery, $query, $dateFrom, $dateTo, $sort, $selectedTags] = $this->filteredEvents($request);
+        $events = $eventsQuery->paginate(12);
+        $events->appends($request->query());
 
         return view('pages.events.event_index', compact('events', 'query', 'dateFrom', 'dateTo', 'sort', 'selectedTags'))
             ->with('availableTags', EventTag::options())
@@ -61,44 +26,9 @@ class EventController extends Controller
 
         public function start(Request $request)
     {
-        $query = trim((string) $request->input('q', ''));
-        $dateFrom = $request->input('date_from');
-        $dateTo = $request->input('date_to');
-        $sort = $request->input('sort', 'date');
-        $selectedTags = array_values(array_filter(array_map('trim', (array) $request->input('tags', []))));
-
-        $eventsQuery = Event::query()
-            ->when($query !== '', function ($q) use ($query) {
-                $q->where(function ($sub) use ($query) {
-                    $sub->where('title', 'like', '%' . $query . '%')
-                        ->orWhere('place', 'like', '%' . $query . '%')
-                        ->orWhere('description', 'like', '%' . $query . '%')
-                        ->orWhereJsonContains('tags', $query);
-                });
-            })
-            ->when(! empty($selectedTags), function ($q) use ($selectedTags) {
-                foreach ($selectedTags as $tag) {
-                    $q->whereJsonContains('tags', $tag);
-                }
-            });
-
-        if ($dateFrom) {
-            $eventsQuery->where('date', '>=', $dateFrom . ' 00:00:00');
-        }
-
-        if ($dateTo) {
-            $eventsQuery->where('date', '<=', $dateTo . ' 23:59:59');
-        }
-
-        if ($sort === 'popular') {
-            $eventsQuery->withCount('registrations')->orderByDesc('registrations_count');
-        } else {
-            $eventsQuery->orderBy('date');
-        }
-
+        [$eventsQuery, $query, $dateFrom, $dateTo, $sort, $selectedTags] = $this->filteredEvents($request);
         $events = $eventsQuery->get();
 
-        // === ДАННЫЕ ДЛЯ КАРТЫ ===
         $mapMarkers = $events->filter(function ($event) {
             return $event->latitude && $event->longitude;
         })->map(function ($event) {
@@ -117,9 +47,7 @@ class EventController extends Controller
             ->with('availableTags', EventTag::options())
             ->with('tags', $selectedTags);
     }
-    /**
-     * Show the form for creating a new resource.
-     */
+
     public function create()
     {
         $user = Auth::user();
@@ -131,9 +59,6 @@ class EventController extends Controller
         return view('pages.events.event_create')->with('availableTags', EventTag::options());
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $user = Auth::user();
@@ -148,10 +73,10 @@ class EventController extends Controller
             'place'       => 'required|string|max:255',
             'description' => 'nullable|string|max:2000',
             'tags'        => 'nullable|array',
-            'tags.*'      => 'nullable|string|in:' . implode(',', array_map(static fn (EventTag $tag) => $tag->value, EventTag::cases())),
+            'tags.*'      => ['nullable', 'string', Rule::enum(EventTag::class)],
             'min_entries' => 'nullable|integer|min:0',
             'max_entries' => 'nullable|integer|min:1',
-            'image'       => 'nullable|image|mimes:jpg,jpeg,webp|max:50',
+            'image'       => 'nullable|image|mimes:jpg,jpeg,webp|max:5000',
             'latitude'    => 'required|numeric|between:-90,90',
             'longitude'   => 'required|numeric|between:-180,180',
         ]);
@@ -173,28 +98,22 @@ class EventController extends Controller
         }
 
         $user = auth()->user();
-        if ($user && in_array($user->role, ['club', 'club_admin', 'club_moderator'], true)) {
+        if ($user && $user->role?->managesClubContent()) {
             $validated['club_id'] = $user->club_id ?? $user->id;
             $validated['author_id'] = $user->id;
         }
 
         Event::create($validated);
 
-        return redirect('/')->with('success', 'Мероприятие создано!');
+        return redirect('/')->with('success', 'Мероприятие создано.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show($id)
     {
         $event = Event::findOrFail($id);
         return view('pages.events.event_show', compact('event'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit($id)
     {
         $event = Event::findOrFail($id);
@@ -206,9 +125,6 @@ class EventController extends Controller
         return view('pages.events.event_edit', compact('event'))->with('availableTags', EventTag::options());
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $id)
     {
         $event = Event::findOrFail($id);
@@ -223,10 +139,10 @@ class EventController extends Controller
             'place'       => 'required|string|max:255',
             'description' => 'nullable|string|max:2000',
             'tags'        => 'nullable|array',
-            'tags.*'      => 'nullable|string|in:' . implode(',', array_map(static fn (EventTag $tag) => $tag->value, EventTag::cases())),
+            'tags.*'      => ['nullable', 'string', Rule::enum(EventTag::class)],
             'min_entries' => 'nullable|integer|min:0',
             'max_entries' => 'nullable|integer|min:1',
-            'image'       => 'nullable|image|mimes:jpg,jpeg,webp|max:50',
+            'image'       => 'nullable|image|mimes:jpg,jpeg,webp|max:5000',
             'latitude'    => 'required|numeric|between:-90,90',
             'longitude'   => 'required|numeric|between:-180,180',
         ]);
@@ -254,7 +170,7 @@ class EventController extends Controller
         }
 
         $user = auth()->user();
-        if ($user && in_array($user->role, ['club', 'club_admin', 'club_moderator'], true)) {
+        if ($user && $user->role?->managesClubContent()) {
             $validated['club_id'] = $user->club_id ?? $user->id;
             $validated['author_id'] = $user->id;
         }
@@ -285,7 +201,6 @@ class EventController extends Controller
         return view('pages.events.event_delete', compact('event'));
     }
 
-
     public function destroy($id)
     {
         $event = Event::findOrFail($id);
@@ -297,5 +212,42 @@ class EventController extends Controller
         $event->delete();
 
         return redirect('/')->with('success', 'Мероприятие удалено');
+    }
+
+    private function filteredEvents(Request $request): array
+    {
+        $query = trim((string) $request->input('q', ''));
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+        $sort = $request->input('sort', 'date');
+        $selectedTags = array_values(array_filter(array_map(
+            static fn ($tag) => EventTag::tryFrom(trim((string) $tag))?->value,
+            (array) $request->input('tags', [])
+        )));
+
+        $eventsQuery = Event::query()
+            ->when($query !== '', function ($q) use ($query) {
+                $q->where(function ($sub) use ($query) {
+                    $sub->where('title', 'like', '%' . $query . '%')
+                        ->orWhere('place', 'like', '%' . $query . '%')
+                        ->orWhere('description', 'like', '%' . $query . '%')
+                        ->orWhereJsonContains('tags', $query);
+                });
+            })
+            ->when($selectedTags !== [], function ($q) use ($selectedTags) {
+                foreach ($selectedTags as $tag) {
+                    $q->whereJsonContains('tags', $tag);
+                }
+            })
+            ->when($dateFrom, fn ($q) => $q->where('date', '>=', $dateFrom . ' 00:00:00'))
+            ->when($dateTo, fn ($q) => $q->where('date', '<=', $dateTo . ' 23:59:59'));
+
+        if ($sort === 'popular') {
+            $eventsQuery->withCount('registrations')->orderByDesc('registrations_count');
+        } else {
+            $eventsQuery->orderBy('date');
+        }
+
+        return [$eventsQuery, $query, $dateFrom, $dateTo, $sort, $selectedTags];
     }
 }

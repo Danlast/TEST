@@ -1,16 +1,15 @@
 @extends('template.app')
 
 @section('page')
-<div class="container" style="margin-bottom: 60px;">
+<div class="container page-container">
     <div class="page-shell">
         <div class="page-header">
             <div>
-                <h2 class="section-title" style="margin: 0 0 8px;">Обмен книгами</h2>
+                <h2 class="section-title page-title">Обмен книгами</h2>
                 <p class="page-subtitle">Ищите активные объявления и смотрите их на карте.</p>
             </div>
             <a href="{{ route('exchange.create') }}" class="btn btn-primary">Выложить объявление</a>
         </div>
-
         <div class="object-grid">
             @forelse($exchanges as $exchange)
                 <div class="card">
@@ -27,9 +26,11 @@
             @endforelse
         </div>
 
-        <div class="container-map" style="margin-top: 24px;">
+        {{ $exchanges->links() }}
+
+        <div class="container-map section-spaced">
             <div class="map-section">
-                <h3 class="section-title" style="margin: 0 0 16px;">Карта объявлений</h3>
+                <h3 class="section-title section-title-spaced">Карта объявлений</h3>
                 <div id="exchange-map" class="map-container"></div>
             </div>
         </div>
@@ -39,8 +40,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 @php
-$exchangeMarkers = $exchanges
-    ->filter(fn($exchange) => !empty($exchange->latitude) && !empty($exchange->longitude))
+$exchangeMarkers = $exchangeMarkers
     ->map(function ($exchange) {
         return [
             'id' => $exchange->id,
@@ -74,10 +74,10 @@ document.addEventListener('DOMContentLoaded', function () {
     markers.forEach((item) => {
         const marker = L.marker([item.latitude, item.longitude], { icon: markerIcon }).addTo(map);
         marker.bindPopup(`
-            <div style="padding: 6px;">
+            <div class="map-popup">
                 <strong>${item.title}</strong><br>
                 ${item.place}<br>
-                <a href="${item.url}" style="display:inline-block;margin-top:6px;">Подробнее</a>
+                <a href="${item.url}" class="map-popup-link">Подробнее</a>
             </div>
         `);
         markerGroup.push(marker);

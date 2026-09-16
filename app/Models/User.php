@@ -8,6 +8,18 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * @property int $id
+ * @property string $username
+ * @property string $email
+ * @property \App\Enums\UserRole $role
+ * @property int|null $club_id
+ * @property bool $club_banned
+ * @property int|null $club_ban_club_id
+ * @property string|null $club_ban_reason
+ * @property string|null $description
+ * @property string|null $avatar
+ */
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
@@ -43,6 +55,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'role' => \App\Enums\UserRole::class,
         'password' => 'hashed',
     ];
 
@@ -100,15 +113,15 @@ class User extends Authenticatable
     {
         $role = $this->role;
 
-        if (in_array($role, ['admin', 'moderator'], true)) {
+        if ($role?->isStaff()) {
             return true;
         }
 
-        if ($role === 'club') {
+        if ($role === \App\Enums\UserRole::CLUB) {
             return $event->club_id && (int) $event->club_id === (int) $this->id;
         }
 
-        if ($role === 'club_moderator') {
+        if ($role === \App\Enums\UserRole::CLUB_MODERATOR) {
             return $event->club_id && (int) $event->club_id === (int) $this->club_id;
         }
 
@@ -117,12 +130,12 @@ class User extends Authenticatable
 
     public function canCreateEvents(): bool
     {
-        return in_array($this->role, ['admin', 'moderator', 'club', 'club_moderator'], true);
+        return $this->role?->isStaff() || $this->role?->managesClubContent() ?? false;
     }
 
     public function canManageBookExchange($exchange): bool
     {
-        if (in_array($this->role, ['admin', 'moderator'], true)) {
+        if ($this->role?->isStaff()) {
             return true;
         }
 
@@ -146,7 +159,7 @@ class User extends Authenticatable
 
     public function canDeleteComment($comment): bool
     {
-        if (in_array($this->role, ['admin', 'moderator'], true)) {
+        if ($this->role?->isStaff()) {
             return true;
         }
 
@@ -167,15 +180,15 @@ class User extends Authenticatable
 
     public function canManageClub($club): bool
     {
-        if ($this->role === 'admin') {
+        if ($this->role === \App\Enums\UserRole::ADMIN) {
             return true;
         }
 
-        if ($this->role === 'club' && $this->id === $club->id) {
+        if ($this->role === \App\Enums\UserRole::CLUB && $this->id === $club->id) {
             return true;
         }
 
-        return $this->role === 'club_moderator'
+        return $this->role === \App\Enums\UserRole::CLUB_MODERATOR
             && $this->club_id
             && (int) $this->club_id === (int) $club->id;
     }

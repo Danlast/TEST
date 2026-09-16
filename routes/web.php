@@ -9,7 +9,7 @@ use App\Http\Controllers\FavoriteController;
 use Illuminate\Support\Facades\Route;
 
 // ========== ПУБЛИЧНЫЕ МАРШРУТЫ ==========
-Route::get('/', [EventController::class, 'index'])->name('home');
+Route::get('/', [EventController::class, 'start'])->name('home');
 Route::get('/start', [EventController::class, 'start'])->name('start');
 
 Route::get('/api/events/map-data', [EventController::class, 'mapData'])->name('events.map'); 

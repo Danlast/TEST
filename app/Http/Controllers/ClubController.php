@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClubMembership;
+use App\Enums\UserRole;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class ClubController extends Controller
         $query = $request->input('q');
 
         $clubs = User::query()
-            ->where('role', 'club')
+            ->where('role', UserRole::CLUB)
             ->when($query, function ($q) use ($query) {
                 $q->where(function ($sub) use ($query) {
                     $sub->where('username', 'like', '%' . $query . '%')
@@ -23,7 +24,8 @@ class ClubController extends Controller
                 });
             })
             ->orderBy('username')
-            ->get();
+            ->paginate(12);
+        $clubs->appends($request->query());
 
         return view('pages.clubs.club_index', compact('clubs', 'query'));
     }
@@ -32,7 +34,7 @@ class ClubController extends Controller
     {
         $club = User::findOrFail($id);
 
-        if ($club->role !== 'club') {
+        if ($club->role !== UserRole::CLUB) {
             abort(404);
         }
 
@@ -64,7 +66,7 @@ class ClubController extends Controller
     {
         $club = User::findOrFail($id);
 
-        if ($club->role !== 'club') {
+        if ($club->role !== UserRole::CLUB) {
             abort(404);
         }
 
@@ -82,7 +84,7 @@ class ClubController extends Controller
     {
         $club = User::findOrFail($id);
 
-        if ($club->role !== 'club') {
+        if ($club->role !== UserRole::CLUB) {
             abort(404);
         }
 
@@ -166,7 +168,10 @@ class ClubController extends Controller
 
         $request->validate([
             'email' => 'required|email|exists:users,email',
-            'role' => 'required|in:club_moderator,user',
+            'role' => ['required', \Illuminate\Validation\Rule::in([
+                UserRole::CLUB_MODERATOR->value,
+                UserRole::USER->value,
+            ])],
         ]);
 
         $targetUser = User::where('email', $request->input('email'))->firstOrFail();

@@ -21,7 +21,7 @@
         <div class="form-group">
             <label>Описание</label>
             <textarea name="description" rows="5" maxlength="1000" placeholder="Напишите немного о себе (до 1000 символов)">{{ old('description', $user->description) }}</textarea>
-            <div style="font-size: 0.9rem; color: #7a6b55; margin-top: 4px;">До 1000 символов</div>
+            <div class="form-help profile-help">До 1000 символов</div>
             @error('description') <span class="error">* {{ $message }}</span> @enderror
         </div>
 

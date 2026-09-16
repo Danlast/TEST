@@ -86,7 +86,7 @@ class AccountController extends Controller
             'username' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'description' => 'nullable|string|max:1000',
-            'avatar' => 'nullable|image|max:2048',
+            'avatar' => 'nullable|image|max:5000',
         ]);
 
         if ($request->hasFile('avatar')) {
