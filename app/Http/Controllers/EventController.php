@@ -14,11 +14,11 @@ class EventController extends Controller
 {
     public function index(Request $request)
     {
-        [$eventsQuery, $query, $dateFrom, $dateTo, $sort, $selectedTags] = $this->filteredEvents($request);
+        [$eventsQuery, $query, $place, $dateFrom, $dateTo, $sort, $selectedTags] = $this->filteredEvents($request);
         $events = $eventsQuery->paginate(12);
         $events->appends($request->query());
 
-        return view('pages.events.event_index', compact('events', 'query', 'dateFrom', 'dateTo', 'sort', 'selectedTags'))
+        return view('pages.events.event_index', compact('events', 'query', 'place', 'dateFrom', 'dateTo', 'sort', 'selectedTags'))
             ->with('availableTags', EventTag::options())
             ->with('tags', $selectedTags);
     }
@@ -26,7 +26,7 @@ class EventController extends Controller
 
         public function start(Request $request)
     {
-        [$eventsQuery, $query, $dateFrom, $dateTo, $sort, $selectedTags] = $this->filteredEvents($request);
+        [$eventsQuery, $query, $place, $dateFrom, $dateTo, $sort, $selectedTags] = $this->filteredEvents($request);
         $events = $eventsQuery->get();
 
         $mapMarkers = $events->filter(function ($event) {
@@ -43,7 +43,7 @@ class EventController extends Controller
             ];
         })->values();
 
-        return view('pages.start', compact('events', 'query', 'dateFrom', 'dateTo', 'sort', 'selectedTags', 'mapMarkers'))
+        return view('pages.start', compact('events', 'query', 'place', 'dateFrom', 'dateTo', 'sort', 'selectedTags', 'mapMarkers'))
             ->with('availableTags', EventTag::options())
             ->with('tags', $selectedTags);
     }
@@ -217,6 +217,7 @@ class EventController extends Controller
     private function filteredEvents(Request $request): array
     {
         $query = trim((string) $request->input('q', ''));
+        $place = trim((string) $request->input('place', ''));
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
         $sort = $request->input('sort', 'date');
@@ -234,6 +235,9 @@ class EventController extends Controller
                         ->orWhereJsonContains('tags', $query);
                 });
             })
+            ->when($place !== '', function ($q) use ($place) {
+                $q->where('place', 'like', '%' . $place . '%');
+            })
             ->when($selectedTags !== [], function ($q) use ($selectedTags) {
                 foreach ($selectedTags as $tag) {
                     $q->whereJsonContains('tags', $tag);
@@ -248,6 +252,6 @@ class EventController extends Controller
             $eventsQuery->orderBy('date');
         }
 
-        return [$eventsQuery, $query, $dateFrom, $dateTo, $sort, $selectedTags];
+        return [$eventsQuery, $query, $place, $dateFrom, $dateTo, $sort, $selectedTags];
     }
 }

@@ -40,16 +40,8 @@
         </div>
 
         <div class="form-group">
-            <label>Теги мероприятия</label>
             @php $selectedTags = $event->tags ?? []; @endphp
-            <div class="tag-select-wrap">
-                <select name="tags[]" class="tag-select" multiple size="7">
-                    @foreach($availableTags as $value => $label)
-                        <option value="{{ $value }}" {{ in_array($value, $selectedTags, true) ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
-                <small class="form-help">Можно выбрать несколько тегов. Удерживайте Ctrl/Cmd для выбора нескольких вариантов.</small>
-            </div>
+            <x-tag-picker label="Теги мероприятия" :available-tags="$availableTags" :selected-tags="$selectedTags" />
             @error('tags')
                 <span class="error">* {{ $message }}</span>
             @enderror

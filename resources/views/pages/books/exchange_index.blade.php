@@ -55,11 +55,11 @@ $exchangeMarkers = $exchangeMarkers
 @endphp
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const map = L.map('exchange-map').setView([55.751244, 37.618423], 10);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap',
-        maxZoom: 19
+    const map = L.map('exchange-map', { attributionControl: false }).setView([55.751244, 37.618423], 10);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
     }).addTo(map);
+    L.control.attribution({ prefix: false }).addTo(map);
 
     const markers = @json($exchangeMarkers);
     const markerIcon = L.divIcon({

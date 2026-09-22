@@ -63,11 +63,11 @@
         document.addEventListener('DOMContentLoaded', function () {
             const lat = {{ (float) $exchange->latitude }};
             const lng = {{ (float) $exchange->longitude }};
-            const map = L.map('exchange-detail-map').setView([lat, lng], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap',
-                maxZoom: 19
+            const map = L.map('exchange-detail-map', { attributionControl: false }).setView([lat, lng], 15);
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
             }).addTo(map);
+            L.control.attribution({ prefix: false }).addTo(map);
 
             const markerIcon = L.divIcon({
                 className: 'custom-marker',

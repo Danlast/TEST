@@ -16,17 +16,22 @@
         @include('components.footer')
     </div>
     <script>
-        document.querySelectorAll('.tag-filter').forEach((filter) => {
-            const count = filter.querySelector('[data-tag-count]');
-            const checkboxes = filter.querySelectorAll('input[type="checkbox"]');
+        document.querySelectorAll('[data-tag-picker]').forEach((picker) => {
+            const count = picker.querySelector('[data-tag-count]');
+            const checkboxes = picker.querySelectorAll('input[type="checkbox"]');
+            const clearButton = picker.querySelector('[data-tag-clear]');
 
             if (!count) return;
 
             const updateCount = () => {
-                count.textContent = `Выбрано: ${filter.querySelectorAll('input[type="checkbox"]:checked').length}`;
+                count.textContent = `${picker.querySelectorAll('input[type="checkbox"]:checked').length} выбрано`;
             };
 
             checkboxes.forEach((checkbox) => checkbox.addEventListener('change', updateCount));
+            clearButton?.addEventListener('click', () => {
+                checkboxes.forEach((checkbox) => { checkbox.checked = false; });
+                updateCount();
+            });
         });
     </script>
 </body>

@@ -55,11 +55,11 @@
 document.addEventListener('DOMContentLoaded', function () {
     const defaultLat = {{ old('latitude', $exchange->latitude ?? 55.751244) }};
     const defaultLng = {{ old('longitude', $exchange->longitude ?? 37.618423) }};
-    const map = L.map('map').setView([defaultLat, defaultLng], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap',
-        maxZoom: 19
+    const map = L.map('map', { attributionControl: false }).setView([defaultLat, defaultLng], 13);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
     }).addTo(map);
+    L.control.attribution({ prefix: false }).addTo(map);
 
     const marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
 

@@ -1,7 +1,7 @@
 @extends('template.app')
 @section('page')
 
-<section class="profile-card">
+<section class="content-shell profile-card">
     <div class="profile-header">
         <div>
             <h2>Профиль: {{ $user->username }}</h2>

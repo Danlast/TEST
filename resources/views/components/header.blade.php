@@ -26,6 +26,10 @@
                     <a href="{{ route('event.create') }}">Добавить мероприятие</a>
                 @endif
 
+                @if(auth()->user()->role === \App\Enums\UserRole::ADMIN)
+                    <a href="{{ route('admin.panel') }}">Админ-панель</a>
+                @endif
+
                 <form action="{{ route('logout') }}" method="POST" class="logout-form">
                     @csrf
                     <input type="submit" value="Выйти">

@@ -20,17 +20,9 @@
                     <input type="search" id="article-search" name="q" value="{{ $query ?? '' }}" placeholder="Заголовок, описание или тег" autocomplete="off">
                 </div>
 
-                <fieldset class="filter-field tag-filter filter-wide">
-                    <legend>Теги <span class="tag-count" data-tag-count>Выбрано: {{ count($selectedTags ?? []) }}</span></legend>
-                    <div class="tag-options">
-                        @foreach($availableTags as $value => $label)
-                            <label class="tag-option">
-                                <input type="checkbox" name="tags[]" value="{{ $value }}" {{ in_array($value, $selectedTags ?? [], true) ? 'checked' : '' }}>
-                                <span>{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                </fieldset>
+                <div class="filter-wide">
+                    <x-tag-picker :available-tags="$availableTags" :selected-tags="$selectedTags ?? []" />
+                </div>
             </div>
 
             <div class="filter-actions">

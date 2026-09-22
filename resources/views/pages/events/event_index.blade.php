@@ -1,8 +1,7 @@
 @extends('template.app')
 
 @section('page')
-<div class="container page-container">
-    <div class="page-shell">
+<div class="content-shell">
         <div class="page-header">
             <div>
                 <h2 class="section-title page-title">Все мероприятия</h2>
@@ -36,17 +35,7 @@
                 </div>
             </div>
 
-            <fieldset class="filter-field tag-filter">
-                <legend>Теги <span class="tag-count" data-tag-count>Выбрано: {{ count($tags ?? []) }}</span></legend>
-                <div class="tag-options">
-                    @foreach($availableTags ?? [] as $value => $label)
-                        <label class="tag-option">
-                            <input type="checkbox" name="tags[]" value="{{ $value }}" {{ in_array($value, $tags ?? [], true) ? 'checked' : '' }}>
-                            <span>{{ $label }}</span>
-                        </label>
-                    @endforeach
-                </div>
-            </fieldset>
+            <x-tag-picker :available-tags="$availableTags ?? []" :selected-tags="$tags ?? []" />
 
             <div class="filter-actions">
                 <button type="submit" class="btn btn-primary">Найти мероприятия</button>
@@ -77,6 +66,5 @@
             @endforelse
         </div>
         {{ $events->links() }}
-    </div>
 </div>
 @endsection

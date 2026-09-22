@@ -1,7 +1,7 @@
 @extends('template.app')
 @section('page')
 
-<section class="form-card">
+<section class="content-shell form-card">
     <h2>Добавить мероприятие</h2>
     <form method="POST" action="{{ route('event.store') }}" enctype="multipart/form-data">
         @csrf
@@ -46,16 +46,8 @@
 
         {{-- Теги --}}
         <div class="form-group">
-            <label>Теги мероприятия</label>
             @php $selectedTags = old('tags', []); @endphp
-            <div class="tag-select-wrap">
-                <select name="tags[]" class="tag-select" multiple size="7">
-                    @foreach($availableTags as $value => $label)
-                        <option value="{{ $value }}" {{ in_array($value, $selectedTags, true) ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
-                <small class="form-help">Можно выбрать несколько тегов. Удерживайте Ctrl/Cmd для выбора нескольких вариантов.</small>
-            </div>
+            <x-tag-picker label="Теги мероприятия" :available-tags="$availableTags" :selected-tags="$selectedTags" />
             @error('tags') <span class="error">* {{ $message }}</span> @enderror
         </div>
 
@@ -83,9 +75,7 @@
     </form>
 </section>
 
-{{-- Leaflet CSS --}}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-{{-- Leaflet JS --}}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -94,12 +84,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const defaultLng = {{ old('longitude') ?? 37.618423 }};
 
     // Инициализация карты
-    const map = L.map('map').setView([defaultLat, defaultLng], 13);
+    const map = L.map('map', { attributionControl: false }).setView([defaultLat, defaultLng], 13);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap',
-        maxZoom: 19
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
     }).addTo(map);
+    L.control.attribution({ prefix: false }).addTo(map);
 
     // Кастомный маркер
     const markerIcon = L.divIcon({

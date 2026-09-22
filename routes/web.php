@@ -1,5 +1,6 @@
 <?php
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\BookExchangeController;
 use App\Http\Controllers\ClubController;
@@ -31,7 +32,10 @@ Route::post('/club-ban/{id}', [ClubController::class, 'banUser'])->name('club.ba
 Route::post('/club-assign-role/{id}', [ClubController::class, 'assignRole'])->name('club.assignRole');
 Route::get('/club-faq', function () { return view('pages.clubs.club_faq'); })->name('club.faq');
 Route::get('/event-index', [EventController::class, 'index'])->name('event.index');
-Route::get('/admin-panel', function () { return view('pages.admin_panel'); })->name('admin.panel');
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/admin-panel', [AdminController::class, 'index'])->name('admin.panel');
+    Route::post('/admin-panel/users/{user}/role', [AdminController::class, 'updateUser'])->name('admin.users.update');
+});
 Route::get('/moderator-panel', function () { return view('pages.moderator_panel'); })->name('moderator.panel');
 Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
 Route::get('/article/{article}', [ArticleController::class, 'show'])->name('articles.show');

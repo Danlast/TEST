@@ -84,6 +84,11 @@ class User extends Authenticatable
         return $this->belongsToMany(User::class, 'club_memberships', 'user_id', 'club_id');
     }
 
+    public function club()
+    {
+        return $this->belongsTo(User::class, 'club_id');
+    }
+
     public function clubEvents()
     {
         return Event::query()
