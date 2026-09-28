@@ -9,6 +9,7 @@ use App\Models\Event;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ClubController extends Controller
 {
@@ -69,13 +70,21 @@ class ClubController extends Controller
             ->orderBy('username')
             ->get();
 
+        $eventQuery = $request->input('event');
         $events = Event::where('club_id', $club->id)
+            ->when($eventQuery, function ($q) use ($eventQuery) {
+                $q->where(function ($sub) use ($eventQuery) {
+                    $sub->where('title', 'like', '%' . $eventQuery . '%')
+                        ->orWhere('place', 'like', '%' . $eventQuery . '%');
+                });
+            })
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate(6)
+            ->appends($request->query());
 
-        $comments = $club->profileComments()->with('user')->latest()->get();
+        $comments = \App\Models\Comment::nestReplies($club->profileComments()->with(['user', 'repliedTo.user'])->oldest()->get());
 
-        return view('pages.clubs.club_profile', compact('club', 'members', 'events', 'comments', 'query'));
+        return view('pages.clubs.club_profile', compact('club', 'members', 'events', 'comments', 'query', 'eventQuery'));
     }
 
     public function join($id)
@@ -134,13 +143,24 @@ class ClubController extends Controller
             abort(403);
         }
 
-        $request->validate([
+        $data = $request->validate([
             'username' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $club->id,
+            'description' => 'nullable|string|max:1000',
+            'avatar' => 'nullable|image|max:5000',
         ]);
 
-        $club->username = $request->input('username');
-        $club->email = $request->input('email');
+        if ($request->hasFile('avatar')) {
+            $oldAvatarPath = $club->avatar_path;
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $data['avatar'] = ltrim($path, '/');
+
+            if ($oldAvatarPath) {
+                Storage::disk('public')->delete($oldAvatarPath);
+            }
+        }
+
+        $club->fill($data);
         $club->save();
 
         AuditLog::create([
@@ -199,16 +219,40 @@ class ClubController extends Controller
             abort(403);
         }
 
-        $request->validate([
+        $data = $request->validate([
             'email' => 'required|email|exists:users,email',
-            'role' => ['required', \Illuminate\Validation\Rule::in([
+            'action' => ['required', \Illuminate\Validation\Rule::in([
                 UserRole::CLUB_MODERATOR->value,
                 UserRole::USER->value,
+                'ban',
             ])],
+            'reason' => 'required_if:action,ban|nullable|string|max:255',
         ]);
 
-        $targetUser = User::where('email', $request->input('email'))->firstOrFail();
-        $targetRole = UserRole::from($request->input('role'));
+        $targetUser = User::where('email', $data['email'])->firstOrFail();
+
+        if ($data['action'] === 'ban') {
+            if ($targetUser->id === $club->id) {
+                return back()->withErrors(['email' => 'Нельзя забанить самого клуба.']);
+            }
+
+            $targetUser->club_banned = true;
+            $targetUser->club_ban_reason = $data['reason'];
+            $targetUser->club_ban_club_id = $club->id;
+            $targetUser->save();
+
+            AuditLog::create([
+                'actor_id' => Auth::id(),
+                'action' => 'club.user_banned',
+                'target_type' => User::class,
+                'target_id' => $targetUser->id,
+                'new_values' => ['club_id' => $club->id, 'reason' => $targetUser->club_ban_reason],
+            ]);
+
+            return back()->with('success', 'Пользователь забанен в клубе.');
+        }
+
+        $targetRole = UserRole::from($data['action']);
         $targetUser->role = $targetRole;
         $targetUser->club_id = $targetRole === UserRole::CLUB_MODERATOR ? $club->id : null;
         $targetUser->save();

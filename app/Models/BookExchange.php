@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $booked_by_user_id
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
+ * @property string $short_place
+ * @property string $formatted_date
  */
 class BookExchange extends Model
 {
@@ -40,6 +42,24 @@ class BookExchange extends Model
     public function bookedByUser()
     {
         return $this->belongsTo(User::class, 'booked_by_user_id');
+    }
+
+    public function getShortPlaceAttribute(): string
+    {
+        $parts = array_values(array_filter(array_map('trim', explode(',', $this->place))));
+        $parts = array_values(array_filter($parts, function (string $part) {
+            return ! preg_match('/^\d{5,6}$/', $part)
+                && ! preg_match('/\b(russia|россия|federal district|федеральный округ)\b/ui', $part);
+        }));
+
+        return implode(', ', array_slice($parts, 0, 5)) ?: $this->place;
+    }
+
+    public function getFormattedDateAttribute(): string
+    {
+        return $this->date
+            ? $this->date->locale('ru')->translatedFormat('j F Y, H:i')
+            : 'Дата не указана';
     }
 
     public function canBeManagedBy(User $user): bool

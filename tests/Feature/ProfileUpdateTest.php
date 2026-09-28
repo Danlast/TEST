@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -44,5 +45,31 @@ class ProfileUpdateTest extends TestCase
         $this->assertSame($description, $user->description);
         $this->assertNotNull($user->avatar);
         Storage::disk('public')->assertExists($user->avatar);
+    }
+
+    public function test_club_profile_can_store_avatar_and_description(): void
+    {
+        Storage::fake('public');
+
+        $club = User::create([
+            'username' => 'Тестовый клуб',
+            'email' => 'club@example.com',
+            'password' => 'password123',
+            'role' => UserRole::CLUB,
+        ]);
+
+        $response = $this->actingAs($club)->post(route('club.update', $club), [
+            'username' => $club->username,
+            'email' => $club->email,
+            'description' => 'Клуб любителей фантастики',
+            'avatar' => UploadedFile::fake()->image('club.jpg', 200, 200),
+        ]);
+
+        $response->assertRedirect(route('club.profile', $club));
+        $club->refresh();
+
+        $this->assertSame('Клуб любителей фантастики', $club->description);
+        $this->assertNotNull($club->avatar);
+        Storage::disk('public')->assertExists($club->avatar);
     }
 }

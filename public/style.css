@@ -408,10 +408,22 @@ body {
 .popup-link { display: inline-block; text-decoration: none; padding: 6px 12px; }
 .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
 .leaflet-popup-content { margin: 0; width: 250px !important; }
-.popup-card { padding: 15px; }
-.popup-card h3 { margin: 0 0 10px; font-size: 16px; color: #1e293b; }
-.popup-card p { margin: 5px 0; font-size: 14px; color: #64748b; }
-.popup-card .btn { margin-top: 10px; }
+.popup-card { display: flex; flex-direction: column; gap: 4px; padding: 10px; }
+.popup-card h3 { margin: 0 0 2px; font-size: 15px; line-height: 1.25; color: #1e293b; }
+.popup-card p { margin: 0; font-size: 13px; line-height: 1.3; color: #64748b; }
+.popup-card .popup-registrations { margin-top: 2px; }
+.popup-card .btn { margin-top: 4px; }
+.popup-poster { display: block; width: 100%; height: 72px; object-fit: cover; border-radius: 6px; margin-bottom: 2px; }
+.popup-meta-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; color: #64748b; }
+.popup-meta-row > * { min-width: 0; }
+.popup-date { text-align: right; white-space: nowrap; }
+.popup-place { overflow-wrap: anywhere; }
+.popup-tags { overflow-wrap: anywhere; }
+.popup-club a { color: var(--accent-hover); }
+.popup-link { color: var(--accent-hover) !important; background: transparent !important; }
+.popup-card .popup-link { align-self: center; }
+.event-map-marker { background: transparent; border: 0; }
+.event-map-marker img { display: block; width: 24px; height: 29px; object-fit: cover; border: 1px solid #fff; border-radius: 3px 3px 3px 0; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35); transform: rotate(-3deg); }
 
 @media (max-width: 768px) {
     .content-shell {
@@ -532,19 +544,15 @@ body {
 
 /* ===== КАРТОЧКИ ===== */
 .custom-marker {
-    background: #b8864b;
-    border: 3px solid #fff;
-    border-radius: 50%;
-    width: 42px;
-    height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(42, 36, 32, 0.25);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-sizing: border-box;
+    width: 26px;
+    height: 32px;
     transition: transform 0.2s ease;
 }
+.custom-marker img { display: block; width: 100%; height: 100%; object-fit: cover; border: 1px solid #fff; border-radius: 3px; box-shadow: 0 1px 4px rgba(42, 36, 32, 0.3); }
 
 .custom-marker:hover {
     transform: scale(1.08);
@@ -628,6 +636,37 @@ body {
     line-height: 1.3;
 }
 
+.event-card-poster { height: 180px; flex: 0 0 180px; }
+.event-card-content { gap: 0; }
+.event-card .card-title { margin: 0 0 8px; }
+.event-card-tags,
+.event-card-place,
+.event-card-registrations { margin: 0 0 10px; color: var(--text-muted); font-size: 0.9rem; line-height: 1.4; }
+.event-card-description { display: -webkit-box; overflow: hidden; margin: 0 0 10px; color: var(--text-muted); font-size: 0.9rem; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.event-card-tags { color: var(--accent-hover); }
+.event-card-place { overflow-wrap: anywhere; }
+.event-card-club-date { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; margin: auto 0 10px; color: var(--text-muted); font-size: 0.85rem; }
+.event-card-club { overflow: hidden; color: var(--accent-hover); text-overflow: ellipsis; white-space: nowrap; }
+.event-card-club-date time { white-space: nowrap; }
+.event-card-registrations { margin-bottom: 12px; }
+.event-card-link { align-self: flex-start; }
+.exchange-card-content { gap: 0; }
+.exchange-card .card-title { margin-bottom: 8px; }
+.exchange-status { align-self: flex-start; margin-bottom: 10px; padding: 4px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; }
+.exchange-status.is-active { background: #e7f2e9; color: #28613b; }
+.exchange-status.is-booked { background: #fff0dc; color: #8b5416; }
+.exchange-card-description { display: -webkit-box; overflow: hidden; margin: 0 0 10px; color: var(--text-muted); font-size: 0.9rem; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.exchange-card-place { overflow-wrap: anywhere; margin: 0 0 10px; color: var(--text-muted); font-size: 0.9rem; }
+.exchange-card-author-date { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; margin: auto 0 12px; font-size: 0.85rem; }
+.exchange-card-author-date a { overflow: hidden; color: var(--accent-hover); text-overflow: ellipsis; white-space: nowrap; }
+.exchange-card-author-date time { color: var(--text-muted); white-space: nowrap; }
+.exchange-card-link { align-self: flex-start; }
+.exchange-detail-card { max-width: 920px; margin: 0 auto 40px; }
+.exchange-detail-content { padding: 32px; }
+.exchange-detail-content > h2 { margin: 0 0 8px; font-family: var(--font-serif); }
+.exchange-detail-description { display: block; overflow: visible; white-space: pre-wrap; -webkit-line-clamp: unset; }
+.exchange-detail-author-date { margin: 4px 0 16px; }
+
 .card-meta {
     color: var(--text-muted);
     font-size: 0.9rem;
@@ -701,6 +740,20 @@ body {
     margin-bottom: 14px;
     color: var(--text-main);
 }
+.event-detail-card { max-width: 1040px; margin: 0 auto 40px; }
+.event-detail-content { max-width: 840px; margin: 0 auto; }
+.event-detail-tags { color: var(--accent-hover) !important; font-weight: 600; }
+.event-detail-description { white-space: pre-wrap; line-height: 1.65; }
+.event-detail-place { margin-bottom: 10px !important; }
+.event-detail-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; margin: 8px 0; color: var(--text-muted); }
+.event-detail-meta a { color: var(--accent-hover); }
+.event-detail-capacity { font-weight: 600; }
+.event-attendees-section { margin-top: 28px; }
+.event-attendee-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.event-attendee-list li { min-height: 38px; padding: 8px 12px; border-bottom: 1px solid var(--border-light); text-align: left; }
+.event-attendee-list a { color: var(--accent-hover); text-decoration: none; }
+.event-attendee-list a:hover { text-decoration: underline; }
+.attendee-show-more { margin-top: 12px; }
 
 /* ===== ФОРМЫ ===== */
 .form-card {
@@ -1032,6 +1085,16 @@ hr {
     padding: 12px 0;
     border-bottom: 1px solid #eee;
 }
+.comment-thread { min-width: 0; }
+.comment-replies { margin-left: 18px; border-left: 2px solid var(--border-light); padding-left: 14px; }
+.comment-replies > summary, .comment-reply > summary { color: var(--accent-hover); font-size: 0.85rem; cursor: pointer; }
+.comment-replies-list { margin-top: 4px; }
+.comment-reply { margin-top: 8px; }
+.comment-reply-form { display: grid; gap: 8px; margin-top: 8px; }
+.comment-reply-form textarea { width: 100%; }
+.comment-reply-form .btn { justify-self: start; }
+.comment-status { margin: 8px 0 0; color: var(--accent-hover); font-size: 0.9rem; }
+.comment-status-error { color: #b42318; }
 .comment-avatar {
     width: 44px;
     height: 44px;
@@ -1053,7 +1116,12 @@ hr {
 .comment-author { color: #6b4c1d; font-weight: 700; text-decoration: none; }
 .comment-date { color: #8b7b63; font-size: 0.85rem; }
 .comment-content { margin: 6px 0 0; white-space: pre-wrap; }
-.comment-actions { position: relative; }
+.comment-quote { display: grid; gap: 3px; margin: 8px 0 0; padding: 7px 10px; border-left: 2px solid var(--accent); background: var(--input-bg); color: var(--text-muted); font-size: 0.9rem; }
+.comment-quote span { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.comment-content.comment-deleted { color: var(--text-muted); font-style: italic; }
+.comment-actions { position: relative; display: flex; align-items: flex-start; gap: 8px; }
+.comment-actions .comment-reply { margin: 0; }
+.comment-actions .comment-reply > summary { padding: 4px 0; white-space: nowrap; }
 .comment-menu-toggle { border: 0; background: transparent; color: var(--accent-hover); cursor: pointer; font-size: 1.2rem; padding: 2px 6px; }
 .comment-menu { display: none; position: absolute; right: 0; top: 28px; z-index: 10; min-width: 200px; padding: 6px; background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); }
 .comment-menu.is-open { display: block; }
@@ -1067,6 +1135,10 @@ hr {
 .form-map-create { height: 350px; }
 .form-map-edit { height: 300px; margin-top: 8px; }
 .profile-header { display: flex; justify-content: space-between; align-items: center; margin-top: 0; gap: 16px; }
+.profile-header-identity { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.profile-identity-text { min-width: 0; overflow-wrap: anywhere; }
+.profile-header .profile-avatar-wrap { flex: 0 0 auto; margin: 0; }
+.profile-header .profile-avatar { width: 88px; height: 88px; }
 .profile-avatar-wrap { margin: 20px 0; }
 .profile-avatar { width: 120px; height: 120px; object-fit: cover; border-radius: 50%; border: 2px solid var(--border); }
 .profile-avatar-fallback { display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f7e6c5, #e8c38d); color: #8a5a20; font-size: 1.8rem; box-shadow: inset 0 0 0 3px rgba(255,255,255,0.35); }
@@ -1077,6 +1149,10 @@ hr {
 .comments-list { margin-top: 16px; }
 .empty-hint { margin-top: 12px; }
 .profile-description { margin: 16px 0 8px; padding: 12px 14px; background: #fdf7eb; border: 1px solid var(--border); border-radius: 8px; }
+.club-participant-management { margin-top: 32px; }
+.club-event-filter { margin-top: 12px; }
+.club-event-search-row { display: flex; align-items: center; gap: 10px; }
+.club-event-search-row input { flex: 1; min-width: 0; }
 .profile-hidden { text-align: center; }
 .profile-hidden h1 { margin-bottom: 12px; font-family: var(--font-serif); }
 .profile-hidden p { margin-bottom: 20px; color: var(--text-muted); }
@@ -1114,6 +1190,10 @@ hr {
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 @media (max-width: 768px) {
+    .profile-header { align-items: flex-start; flex-wrap: wrap; }
+    .profile-header-identity { flex: 1 1 100%; }
+    .profile-header > .btn { margin-left: 104px; }
+    .club-event-search-row { align-items: stretch; flex-direction: column; }
     .admin-user-row { align-items: stretch; flex-direction: column; }
     .admin-user-form { min-width: 0; }
     .admin-user-form .btn { width: 100%; }

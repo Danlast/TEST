@@ -49,23 +49,7 @@
             @if($events->count() > 0)
                 <div class="object-grid">
                     @foreach ($events as $event)
-                        <div class="card" data-event-id="{{ $event->id }}">
-                            <div class="card-img">
-                                <img src="{{ $event->image_url }}" alt="{{ $event->title }}">
-                            </div>
-                            <div class="card-content">
-                                <h3 class="card-title">{{ $event->title }}</h3>
-                                <div class="card-meta">
-                                    {{ $event->date }} {{ $event->place }}
-                                </div>
-                                @if(!empty($event->tags_labels))
-                                    <div class="card-meta event-tags">
-                                        {{ implode(', ', $event->tags_labels) }}
-                                    </div>
-                                @endif
-                                <a href="{{ route('event.show', $event->id) }}" class="btn btn-outline">Подробнее</a>
-                            </div>
-                        </div>
+                        <x-event-card :event="$event" />
                     @endforeach
                 </div>
             @else
@@ -96,12 +80,16 @@
             L.control.attribution({ prefix: false }).addTo(map);
 
             // Кастомная иконка
-            const createCustomIcon = () => L.divIcon({
-                className: 'custom-marker',
-                html: '📍',
-                iconSize: [42, 42],
-                iconAnchor: [21, 42],
-                popupAnchor: [0, -42]
+            const placeholderImage = @json(asset('images/event-placeholder.svg'));
+            const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            })[character]);
+            const createCustomIcon = (image) => L.divIcon({
+                className: 'event-map-marker',
+                html: `<img src="${escapeHtml(image || placeholderImage)}" alt="">`,
+                iconSize: [26, 32],
+                iconAnchor: [13, 32],
+                popupAnchor: [0, -30]
             });
 
             let markersCount = 0;
@@ -115,31 +103,29 @@
 
                 if (!isNaN(lat) && !isNaN(lon)) {
                     const marker = L.marker([lat, lon], {
-                        icon: createCustomIcon()
+                        icon: createCustomIcon(data.image)
                     }).addTo(map);
 
+                    const tags = (data.tags || []).map(escapeHtml).join(', ');
+                    const clubLink = data.clubUrl
+                        ? `<span class="popup-club">Клуб: <a href="${escapeHtml(data.clubUrl)}">${escapeHtml(data.clubName)}</a></span>`
+                        : '<span></span>';
                     const popupContent = `
                         <div class="popup-card">
-                            <h3>${data.title}</h3>
-                            <p> ${data.place}</p>
-                            <p> ${new Date(data.date).toLocaleDateString('ru-RU')}</p>
-                            <a href="${data.url}" class="btn btn-primary popup-link">
-                                Подробнее
-                            </a>
+                            <img class="popup-poster" src="${escapeHtml(data.image)}" alt="Афиша мероприятия ${escapeHtml(data.title)}">
+                            <h3>${escapeHtml(data.title)}</h3>
+                            ${tags ? `<p class="popup-tags">Теги: ${tags}</p>` : ''}
+                            <p class="popup-place">${escapeHtml(data.place)}</p>
+                            <div class="popup-meta-row">
+                                ${clubLink}
+                                <span class="popup-date">${escapeHtml(data.date)}</span>
+                            </div>
+                            <p class="popup-registrations">Записалось: ${escapeHtml(data.registeredCount)}/${escapeHtml(data.maxEntries)}</p>
+                            <a href="${escapeHtml(data.url)}" class="btn btn-outline popup-link">Подробнее</a>
                         </div>
                     `;
 
                     marker.bindPopup(popupContent);
-
-                    // При клике на маркер – скролл к карточке
-                    marker.on('click', function() {
-                        const card = document.querySelector(`[data-event-id="${data.id}"]`);
-                        if (card) {
-                            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            card.style.boxShadow = '0 0 0 4px rgba(245, 158, 11, 0.5)';
-                            setTimeout(() => { card.style.boxShadow = ''; }, 2000);
-                        }
-                    });
 
                     markersGroup.push(marker);
                     markersCount++;
@@ -175,7 +161,7 @@
                                 if (placeSearchMarker) {
                                     placeSearchMarker.setLatLng(coordinates);
                                 } else {
-                                    placeSearchMarker = L.marker(coordinates, { icon: createCustomIcon() }).addTo(map);
+                                    placeSearchMarker = L.marker(coordinates, { icon: createCustomIcon('') }).addTo(map);
                                 }
 
                                 placeSearchMarker.bindPopup(location.display_name).openPopup();

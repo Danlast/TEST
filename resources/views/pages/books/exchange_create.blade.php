@@ -65,10 +65,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const markerIcon = L.divIcon({
         className: 'custom-marker',
-        html: '🕮',
-        iconSize: [42, 42],
-        iconAnchor: [21, 42],
-        popupAnchor: [0, -42]
+        html: '<img src="{{ asset('images/event-placeholder.svg') }}" alt="">',
+        iconSize: [26, 32],
+        iconAnchor: [13, 32],
+        popupAnchor: [0, -30]
     });
 
     const marker = L.marker([defaultLat, defaultLng], { icon: markerIcon, draggable: true }).addTo(map);

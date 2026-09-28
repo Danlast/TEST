@@ -69,6 +69,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/update', [AccountController::class, 'updateProfile'])->name('profile.update');
     Route::post('/comments/event/{event}', [CommentController::class, 'storeEventComment'])->name('comments.event.store');
     Route::post('/comments/profile/{user}', [CommentController::class, 'storeProfileComment'])->name('comments.profile.store');
+    Route::post('/comments/{comment}/reply', [CommentController::class, 'reply'])->name('comments.reply');
     Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 

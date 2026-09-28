@@ -4,7 +4,7 @@
 <section class="form-card">
     <h2>Редактировать профиль клуба</h2>
 
-    <form method="POST" action="{{ route('club.update', $club->id) }}" class="form-group">
+    <form method="POST" action="{{ route('club.update', $club->id) }}" class="form-group" enctype="multipart/form-data">
         @csrf
 
         <label>Название клуба</label>
@@ -16,6 +16,18 @@
         <label>Email клуба</label>
         <input type="email" name="email" value="{{ old('email', $club->email) }}" required>
         @error('email')
+            <span class="error">* {{ $message }}</span>
+        @enderror
+
+        <label>Описание клуба</label>
+        <textarea name="description" rows="5" maxlength="1000" placeholder="Расскажите о клубе (до 1000 символов)">{{ old('description', $club->description) }}</textarea>
+        @error('description')
+            <span class="error">* {{ $message }}</span>
+        @enderror
+
+        <label>Аватар клуба</label>
+        <input type="file" name="avatar" accept="image/*">
+        @error('avatar')
             <span class="error">* {{ $message }}</span>
         @enderror
 

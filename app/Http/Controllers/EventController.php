@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\EventTag;
 use App\Models\Event;
+use App\Models\Comment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -15,7 +16,7 @@ class EventController extends Controller
     public function index(Request $request)
     {
         [$eventsQuery, $query, $place, $dateFrom, $dateTo, $sort, $selectedTags] = $this->filteredEvents($request);
-        $events = $eventsQuery->paginate(12);
+        $events = $eventsQuery->with('club')->paginate(12);
         $events->appends($request->query());
 
         return view('pages.events.event_index', compact('events', 'query', 'place', 'dateFrom', 'dateTo', 'sort', 'selectedTags'))
@@ -27,7 +28,7 @@ class EventController extends Controller
         public function start(Request $request)
     {
         [$eventsQuery, $query, $place, $dateFrom, $dateTo, $sort, $selectedTags] = $this->filteredEvents($request);
-        $events = $eventsQuery->get();
+        $events = $eventsQuery->with('club')->get();
 
         $mapMarkers = $events->filter(function ($event) {
             return $event->latitude && $event->longitude;
@@ -37,8 +38,14 @@ class EventController extends Controller
                 'title'     => $event->title,
                 'latitude'  => $event->latitude,
                 'longitude' => $event->longitude,
-                'place'     => $event->place,
-                'date'      => $event->date,
+                'place'     => $event->short_place,
+                'date'      => $event->formatted_date,
+                'image'     => $event->image_url,
+                'tags'      => $event->tags_labels,
+                'clubName'  => $event->club?->username,
+                'clubUrl'   => $event->club ? route('club.profile', $event->club) : null,
+                'registeredCount' => $event->registered_count,
+                'maxEntries' => $event->max_entries,
                 'url'       => route('event.show', $event->id),
             ];
         })->values();
@@ -91,6 +98,7 @@ class EventController extends Controller
         $validated = $validator->validated();
         $validated['description'] = $validated['description'] ?? '';
         $validated['tags'] = array_values(array_filter($validated['tags'] ?? []));
+        $validated['image'] = '';
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('events', 'public');
@@ -110,8 +118,10 @@ class EventController extends Controller
 
     public function show($id)
     {
-        $event = Event::findOrFail($id);
-        return view('pages.events.event_show', compact('event'));
+        $event = Event::with(['club', 'registrations.user'])->findOrFail($id);
+        $comments = Comment::nestReplies($event->comments()->with(['user', 'repliedTo.user'])->oldest()->get());
+
+        return view('pages.events.event_show', compact('event', 'comments'));
     }
 
     public function edit($id)
@@ -227,6 +237,8 @@ class EventController extends Controller
         )));
 
         $eventsQuery = Event::query()
+            ->withCount('registrations')
+            ->whereRaw('(select count(*) from event_registrations where event_registrations.event_id = events.id) < coalesce(events.max_entries, 10)')
             ->when($query !== '', function ($q) use ($query) {
                 $q->where(function ($sub) use ($query) {
                     $sub->where('title', 'like', '%' . $query . '%')
@@ -247,7 +259,7 @@ class EventController extends Controller
             ->when($dateTo, fn ($q) => $q->where('date', '<=', $dateTo . ' 23:59:59'));
 
         if ($sort === 'popular') {
-            $eventsQuery->withCount('registrations')->orderByDesc('registrations_count');
+            $eventsQuery->orderByDesc('registrations_count');
         } else {
             $eventsQuery->orderBy('date');
         }

@@ -24,7 +24,7 @@ return new class extends Migration
             $table->integer('max_entries')->default(10);
             $table->unsignedBigInteger('club_id')->nullable();
             $table->unsignedBigInteger('author_id')->nullable();
-            $table->string('image');
+            $table->string('image')->default('');
             $table->timestamps();
         });
     }

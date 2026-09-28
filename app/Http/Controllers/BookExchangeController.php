@@ -64,6 +64,8 @@ class BookExchangeController extends Controller
 
     public function show(BookExchange $exchange)
     {
+        $exchange->load('user');
+
         return view('pages.books.exchange_show', compact('exchange'));
     }
 

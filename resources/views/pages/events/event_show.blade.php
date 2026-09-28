@@ -1,20 +1,26 @@
 @extends('template.app')
 @section('page')
 
-<div class="detail-card">
+<div class="detail-card event-detail-card">
     <div class="detail-img">
         <img src="{{ $event->image_url }}" alt="" height="100%" width="100%">
     </div>
-    <div class="detail-content">
-        <h2>{{ $event->title}}</h2>
-        <p><strong>Описание:</strong> {{ $event->description}}</p>
+    <div class="detail-content event-detail-content">
+        <h2>{{ $event->title }}</h2>
         @if(!empty($event->tags_labels))
-            <p><strong>Теги:</strong> {{ implode(', ', $event->tags_labels) }}</p>
+            <p class="event-detail-tags">{{ implode(', ', $event->tags_labels) }}</p>
         @endif
-        <p><strong>Дата:</strong> {{ $event->date}}</p>
-        <p><strong>Место:</strong> {{ $event->place}}</p>
-        <p><strong>Минимум для проведения:</strong> {{ $event->min_entries ?? 0 }}</p>
-        <p><strong>Записались:</strong> {{ $event->registered_count }}/{{ $event->max_entries }}</p>
+        @if(!empty($event->description))
+            <p class="event-detail-description">{{ $event->description }}</p>
+        @endif
+        <p class="event-detail-place"><strong>Место:</strong> {{ $event->short_place }}</p>
+        <div class="event-detail-meta">
+            @if($event->club)
+                <span><strong>Клуб:</strong> <a href="{{ route('club.profile', $event->club) }}">{{ $event->club->username }}</a></span>
+            @endif
+            <time datetime="{{ $event->date }}"><strong>Дата:</strong> {{ $event->formatted_date }}</time>
+        </div>
+        <p class="event-detail-capacity">Записано: {{ $event->registered_count }}/{{ $event->max_entries }}</p>
 
         @guest
             <p>Чтобы записаться на мероприятие, пожалуйста, <a href="{{ route('show.login') }}">войдите</a></p>
@@ -43,24 +49,27 @@
         </div>
         @endauth
 
-        <div class="form-group">
+        <div class="form-group event-attendees-section">
             <h3>Список записавшихся</h3>
             @if($event->registrations->isNotEmpty())
-                <ul>
+                <ul class="event-attendee-list" data-attendee-list>
                     @foreach($event->registrations as $registration)
-                        <li>
+                        <li @if($loop->iteration > 10) hidden @endif>
                             <a href="{{ route('user.profile', $registration->user->id) }}">
                                 {{ $registration->user->username ?? $registration->user->email }}
                             </a>
                         </li>
                     @endforeach
                 </ul>
+                @if($event->registrations->count() > 10)
+                    <button type="button" class="btn btn-outline attendee-show-more" data-attendee-show-more>Показать ещё</button>
+                @endif
             @else
                 <p>Пока никто не записался.</p>
             @endif
         </div>
 
-        <div class="form-group section-top">
+        <div class="form-group section-top" data-comment-section>
             <h3>Комментарии</h3>
             @auth
                 <form method="POST" action="{{ route('comments.event.store', $event) }}" class="comment-form">
@@ -70,17 +79,28 @@
                 </form>
             @endauth
 
-            @if($event->comments->isNotEmpty())
-                <div class="comments-list">
-                    @foreach($event->comments()->with('user')->latest()->get() as $comment)
-                        <x-comment-item :comment="$comment" />
+            <div class="comments-list" data-comments-list>
+                @if($comments->isNotEmpty())
+                    @foreach($comments as $comment)
+                        <x-comment-item :comment="$comment" :depth="0" />
                     @endforeach
-                </div>
-            @else
+                @endif
+            </div>
+            @if($comments->isEmpty())
                 <p class="empty-hint">Комментариев пока нет.</p>
             @endif
         </div>
     </div>
 </div>
+
+<script>
+    document.querySelector('[data-attendee-show-more]')?.addEventListener('click', function () {
+        const list = document.querySelector('[data-attendee-list]');
+        const hiddenRows = [...list.querySelectorAll('li[hidden]')].slice(0, 10);
+        hiddenRows.forEach((row) => { row.hidden = false; });
+
+        if (!list.querySelector('li[hidden]')) this.remove();
+    });
+</script>
 
 @endsection

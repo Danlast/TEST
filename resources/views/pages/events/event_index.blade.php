@@ -47,20 +47,7 @@
 
         <div class="object-grid">
             @forelse($events as $event)
-                <div class="card">
-                    <div class="card-img">
-                        <img src="{{ $event->image_url }}" alt="{{ $event->title }}" height="100%" width="100%">
-                    </div>
-                    <div class="card-content">
-                        <h3 class="card-title">{{ $event->title }}</h3>
-                        <p>Дата: {{ $event->date }} · {{ $event->place }}</p>
-                        @if(!empty($event->tags_labels))
-                            <p>Теги: {{ implode(', ', $event->tags_labels) }}</p>
-                        @endif
-                        <p>Записалось: {{ $event->registered_count }}</p>
-                        <a href="{{ route('event.show', $event->id) }}" class="btn btn-outline">Подробнее</a>
-                    </div>
-                </div>
+                <x-event-card :event="$event" />
             @empty
                 <p>Мероприятий не найдено.</p>
             @endforelse

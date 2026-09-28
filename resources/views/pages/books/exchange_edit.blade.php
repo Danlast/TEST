@@ -61,7 +61,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }).addTo(map);
     L.control.attribution({ prefix: false }).addTo(map);
 
-    const marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+    const markerIcon = L.divIcon({
+        className: 'custom-marker',
+        html: '<img src="{{ asset('images/event-placeholder.svg') }}" alt="">',
+        iconSize: [26, 32],
+        iconAnchor: [13, 32],
+        popupAnchor: [0, -30]
+    });
+    const marker = L.marker([defaultLat, defaultLng], { icon: markerIcon, draggable: true }).addTo(map);
 
     map.on('click', function (e) {
         marker.setLatLng(e.latlng);

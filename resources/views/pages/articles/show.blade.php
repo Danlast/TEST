@@ -32,7 +32,7 @@
         </div>
     </div>
 
-    <div class="form-group section-top">
+    <div class="form-group section-top" data-comment-section>
         <h3>Комментарии</h3>
         @auth
             <form method="POST" action="{{ route('articles.comment.store', $article) }}" class="comment-form">
@@ -42,13 +42,14 @@
             </form>
         @endauth
 
-        @if($article->comments->isNotEmpty())
-            <div class="comments-list">
-                @foreach($article->comments()->with('user')->latest()->get() as $comment)
-                    <x-comment-item :comment="$comment" />
+        <div class="comments-list" data-comments-list>
+            @if($comments->isNotEmpty())
+            @foreach($comments as $comment)
+                    <x-comment-item :comment="$comment" :depth="0" />
                 @endforeach
-            </div>
-        @else
+            @endif
+        </div>
+        @if($comments->isEmpty())
             <p class="empty-hint">Комментариев пока нет.</p>
         @endif
     </div>

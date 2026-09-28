@@ -91,9 +91,10 @@ class ArticleController extends Controller
 
     public function show(Article $article)
     {
-        $article->load(['user', 'club', 'comments.user']);
+        $article->load(['user', 'club']);
+        $comments = Comment::nestReplies($article->comments()->with(['user', 'repliedTo.user'])->oldest()->get());
 
-        return view('pages.articles.show', compact('article'));
+        return view('pages.articles.show', compact('article', 'comments'));
     }
 
     public function edit(Article $article)
@@ -154,7 +155,7 @@ class ArticleController extends Controller
             abort(403, 'Вы забанены в этом клубе и не можете оставлять комментарии под его статьями.');
         }
 
-        Comment::create([
+        $comment = Comment::create([
             'user_id' => Auth::id(),
             'content' => $request->input('content'),
             'event_id' => null,
@@ -162,7 +163,7 @@ class ArticleController extends Controller
             'article_id' => $article->id,
         ]);
 
-        return back()->with('success', 'Комментарий добавлен');
+        return CommentController::createdResponse($request, $comment, 'Комментарий добавлен');
     }
 
     protected function availableTags(): array

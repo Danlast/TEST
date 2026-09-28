@@ -2,24 +2,22 @@
 @section('page')
 
 <section class="content-shell profile-card">
-    <h2>Профиль: {{ $user->username }}</h2>
-    <p class="profile-email">{{ $user->email }}</p>
-
-    <div class="profile-avatar-wrap">
-        @php
-            $avatarUrl = $user->avatar_url;
-        @endphp
-        @if($avatarUrl)
-            <img src="{{ $avatarUrl }}" alt="Аватар" class="profile-avatar">
-        @else
-            <div class="profile-avatar profile-avatar-fallback">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" fill="#8a5a20"/>
-                    <path d="M4 20C4 16.6863 7.13401 14 11 14H13C16.866 14 20 16.6863 20 20V21H4V20Z" fill="#8a5a20"/>
-                </svg>
-                <span class="profile-initial">{{ strtoupper(substr($user->username, 0, 1)) }}</span>
+    <div class="profile-header">
+        <div class="profile-header-identity">
+            <div class="profile-avatar-wrap">
+                @if($user->avatar_url)
+                    <img src="{{ $user->avatar_url }}" alt="Аватар {{ $user->username }}" class="profile-avatar">
+                @else
+                    <div class="profile-avatar profile-avatar-fallback">
+                        <span class="profile-initial">{{ strtoupper(substr($user->username, 0, 1)) }}</span>
+                    </div>
+                @endif
             </div>
-        @endif
+            <div class="profile-identity-text">
+                <h2>Профиль: {{ $user->username }}</h2>
+                <p class="profile-email">{{ $user->email }}</p>
+            </div>
+        </div>
     </div>
 
     @if(!empty($user->description))
@@ -87,6 +85,7 @@
     </div>
 
     <hr>
+    <div data-comment-section>
     <h3>Комментарии</h3>
     @auth
         <form method="POST" action="{{ route('comments.profile.store', $user) }}" class="comment-form">
@@ -96,15 +95,17 @@
         </form>
     @endauth
 
-    @if($comments->isNotEmpty())
-        <div class="comments-list">
+    <div class="comments-list" data-comments-list>
+        @if($comments->isNotEmpty())
             @foreach($comments as $comment)
-                <x-comment-item :comment="$comment" />
+                <x-comment-item :comment="$comment" :depth="0" />
             @endforeach
-        </div>
-    @else
+        @endif
+    </div>
+    @if($comments->isEmpty())
         <p class="empty-hint">Комментариев пока нет.</p>
     @endif
+    </div>
 </section>
 
 @endsection

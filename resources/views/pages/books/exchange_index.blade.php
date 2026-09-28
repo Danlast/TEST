@@ -12,15 +12,27 @@
         </div>
         <div class="object-grid">
             @forelse($exchanges as $exchange)
-                <div class="card">
-                    <div class="card-content">
+                <article class="card exchange-card">
+                    <div class="card-content exchange-card-content">
                         <h3 class="card-title">{{ $exchange->title }}</h3>
-                        <p>{{ Str::limit($exchange->description, 120) }}</p>
-                        <p><strong>Место:</strong> {{ $exchange->place }}</p>
-                        <p><strong>Статус:</strong> {{ $exchange->status === 'booked' ? 'Забронировано' : 'Активно' }}</p>
-                        <a href="{{ route('exchange.show', $exchange->id) }}" class="btn btn-outline">Подробнее</a>
+                        <span class="exchange-status {{ $exchange->status === 'booked' ? 'is-booked' : 'is-active' }}">
+                            {{ $exchange->status === 'booked' ? 'Забронировано' : 'Активно' }}
+                        </span>
+                        @if(!empty($exchange->description))
+                            <p class="exchange-card-description">{{ $exchange->description }}</p>
+                        @endif
+                        <p class="exchange-card-place">{{ $exchange->short_place }}</p>
+                        <div class="exchange-card-author-date">
+                            @if($exchange->user)
+                                <a href="{{ route('user.profile', $exchange->user->id) }}">{{ $exchange->user->username }}</a>
+                            @else
+                                <span></span>
+                            @endif
+                            <time datetime="{{ $exchange->date?->toIso8601String() }}">{{ $exchange->formatted_date }}</time>
+                        </div>
+                        <a href="{{ route('exchange.show', $exchange->id) }}" class="btn btn-outline exchange-card-link">Подробнее</a>
                     </div>
-                </div>
+                </article>
             @empty
                 <p>Пока нет объявлений.</p>
             @endforelse
@@ -64,10 +76,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const markers = @json($exchangeMarkers);
     const markerIcon = L.divIcon({
         className: 'custom-marker',
-        html: '📍',
-        iconSize: [42, 42],
-        iconAnchor: [21, 42],
-        popupAnchor: [0, -42]
+        html: '<img src="{{ asset('images/event-placeholder.svg') }}" alt="">',
+        iconSize: [26, 32],
+        iconAnchor: [13, 32],
+        popupAnchor: [0, -30]
     });
 
     const markerGroup = [];

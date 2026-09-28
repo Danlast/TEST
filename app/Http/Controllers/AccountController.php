@@ -126,13 +126,13 @@ class AccountController extends Controller
             abort(403);
         }
 
-        Comment::create([
+        $comment = Comment::create([
             'user_id' => Auth::id(),
             'profile_user_id' => $profileUser->id,
             'content' => $request->input('content'),
         ]);
 
-        return back()->with('success', 'Комментарий добавлен.');
+        return CommentController::createdResponse($request, $comment, 'Комментарий добавлен.');
     }
 
     public function destroyComment(Comment $comment)
@@ -180,7 +180,7 @@ class AccountController extends Controller
             'bookedExchanges' => \App\Models\BookExchange::where('booked_by_user_id', $user->id)->latest()->get(),
             'joinedClubs' => $user->joinedClubs()->orderBy('username')->get(),
             'clubEvents' => $user->clubEvents()->orderByDesc('created_at')->get(),
-            'comments' => $user->profileComments()->with('user')->latest()->get(),
+            'comments' => Comment::nestReplies($user->profileComments()->with(['user', 'repliedTo.user'])->oldest()->get()),
         ];
     }
 

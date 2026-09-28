@@ -4,14 +4,25 @@
 <section class="content-shell exchange-page">
     <h2>Объявление</h2>
 
-    <div class="detail-card">
-        <div class="detail-content">
-            <h3>{{ $exchange->title }}</h3>
-            <p><strong>Описание:</strong> {{ $exchange->description }}</p>
-            <p><strong>Место:</strong> {{ $exchange->place }}</p>
-            <p><strong>Дата:</strong> {{ $exchange->date }}</p>
+    <div class="detail-card exchange-detail-card">
+        <div class="detail-content exchange-detail-content">
+            <h2>{{ $exchange->title }}</h2>
+            <span class="exchange-status {{ $exchange->status === 'booked' ? 'is-booked' : 'is-active' }}">
+                {{ $exchange->status === 'booked' ? 'Забронировано' : 'Активно' }}
+            </span>
+            @if(!empty($exchange->description))
+                <p class="exchange-card-description exchange-detail-description">{{ $exchange->description }}</p>
+            @endif
+            <p class="exchange-card-place"><strong>Место:</strong> {{ $exchange->short_place }}</p>
+            <div class="exchange-card-author-date exchange-detail-author-date">
+                @if($exchange->user)
+                    <a href="{{ route('user.profile', $exchange->user->id) }}">{{ $exchange->user->username }}</a>
+                @else
+                    <span></span>
+                @endif
+                <time datetime="{{ $exchange->date?->toIso8601String() }}">{{ $exchange->formatted_date }}</time>
+            </div>
             <p><strong>Контакты:</strong> {{ $exchange->contacts }}</p>
-            <p><strong>Статус:</strong> {{ $exchange->status === 'booked' ? 'Забронировано' : 'Активно' }}</p>
 
             @if($exchange->latitude && $exchange->longitude)
                 <div class="section-top-sm">
@@ -71,10 +82,10 @@
 
             const markerIcon = L.divIcon({
                 className: 'custom-marker',
-                html: '📍',
-                iconSize: [42, 42],
-                iconAnchor: [21, 42],
-                popupAnchor: [0, -42]
+                html: '<img src="{{ asset('images/event-placeholder.svg') }}" alt="">',
+                iconSize: [26, 32],
+                iconAnchor: [13, 32],
+                popupAnchor: [0, -30]
             });
 
             L.marker([lat, lng], { icon: markerIcon }).addTo(map)

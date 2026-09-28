@@ -7,7 +7,9 @@
             <a href="{{ route('event.index') }}">Мероприятия</a>
             <a href="{{ route('club.index') }}">Клубы</a>
             <a href="{{ route('articles.index') }}">Статьи</a>
-            <a href="{{ route('exchange.index') }}">Обмен</a>
+            @auth
+                <a href="{{ route('exchange.index') }}">Обмен</a>
+            @endauth
 
             @guest
                 <a href="{{ route('show.reg') }}">Регистрация</a>

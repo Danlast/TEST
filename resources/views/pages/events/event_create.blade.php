@@ -3,45 +3,20 @@
 
 <section class="content-shell form-card">
     <h2>Добавить мероприятие</h2>
-    <form method="POST" action="{{ route('event.store') }}" enctype="multipart/form-data">
+    <form id="event-create-form" method="POST" action="{{ route('event.store') }}" enctype="multipart/form-data">
         @csrf
 
-        {{-- Название --}}
+        {{-- Афиша --}}
+        <div class="form-group">
+            <label>Афиша (jpg/webp, до 5 МБ)</label>
+            <input type="file" name="image" accept=".jpg,.jpeg,.webp">
+            @error('image') <span class="error">{{ $message }}</span> @enderror
+        </div>
+
         <div class="form-group">
             <label>Название</label>
             <input type="text" name="title" value="{{ old('title') }}">
             @error('title') <span class="error">* {{ $message }}</span> @enderror
-        </div>
-
-        {{-- Дата и время --}}
-        <div class="form-group">
-            <label>Дата и время</label>
-            <input type="datetime-local" name="date" value="{{ old('date') }}">
-            @error('date') <span class="error">* {{ $message }}</span> @enderror
-        </div>
-
-        {{-- Блок выбора места на карте --}}
-        <div class="form-group">
-            <label>Место проведения</label>
-            <div class="map-field">
-                <input type="text" name="place" id="place-input" placeholder="Введите адрес или выберите на карте" value="{{ old('place') }}">
-                <div id="map" class="form-map form-map-create"></div>
-                <small class="form-help">Кликните по карте, чтобы указать точное место, или воспользуйтесь поиском адреса</small>
-            </div>
-            @error('place') <span class="error">* {{ $message }}</span> @enderror
-
-            {{-- Скрытые поля координат --}}
-            <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
-            <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
-            @error('latitude') <span class="error">* {{ $message }}</span> @enderror
-            @error('longitude') <span class="error">* {{ $message }}</span> @enderror
-        </div>
-
-        {{-- Описание --}}
-        <div class="form-group">
-            <label>Описание</label>
-            <textarea name="description" rows="3">{{ old('description') }}</textarea>
-            @error('description') <span class="error">* {{ $message }}</span> @enderror
         </div>
 
         {{-- Теги --}}
@@ -49,6 +24,12 @@
             @php $selectedTags = old('tags', []); @endphp
             <x-tag-picker label="Теги мероприятия" :available-tags="$availableTags" :selected-tags="$selectedTags" />
             @error('tags') <span class="error">* {{ $message }}</span> @enderror
+        </div>
+
+        <div class="form-group">
+            <label>Описание</label>
+            <textarea name="description" rows="3">{{ old('description') }}</textarea>
+            @error('description') <span class="error">* {{ $message }}</span> @enderror
         </div>
 
         {{-- Минимум / Максимум записей --}}
@@ -64,11 +45,26 @@
             @error('max_entries') <span class="error">* {{ $message }}</span> @enderror
         </div>
 
-        {{-- Афиша --}}
+        {{-- Дата и время --}}
         <div class="form-group">
-            <label>Афиша (jpg/webp, до 50kb)</label>
-            <input type="file" name="image" accept=".jpg,.jpeg,.webp">
-            @error('image') <span class="error">{{ $message }}</span> @enderror
+            <label>Дата и время</label>
+            <input type="datetime-local" name="date" value="{{ old('date') }}">
+            @error('date') <span class="error">* {{ $message }}</span> @enderror
+        </div>
+
+        {{-- Место проведения и карта в конце формы --}}
+        <div class="form-group">
+            <label>Место проведения</label>
+            <div class="map-field">
+                <input type="text" name="place" id="place-input" placeholder="Введите адрес или выберите на карте" value="{{ old('place') }}">
+                <div id="map" class="form-map form-map-create"></div>
+                <small class="form-help">Кликните по карте, чтобы указать точное место, или воспользуйтесь поиском адреса</small>
+            </div>
+            @error('place') <span class="error">* {{ $message }}</span> @enderror
+            <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
+            <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
+            @error('latitude') <span class="error">* {{ $message }}</span> @enderror
+            @error('longitude') <span class="error">* {{ $message }}</span> @enderror
         </div>
 
         <input type="submit" class="btn btn-primary" value="Создать">
@@ -79,6 +75,13 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const eventForm = document.getElementById('event-create-form');
+    eventForm?.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && !event.target.matches('textarea, button, [type="submit"]')) {
+            event.preventDefault();
+        }
+    });
+
     // Координаты по умолчанию (Москва), если не заданы
     const defaultLat = {{ old('latitude') ?? 55.751244 }};
     const defaultLng = {{ old('longitude') ?? 37.618423 }};
@@ -94,10 +97,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // Кастомный маркер
     const markerIcon = L.divIcon({
         className: 'custom-marker',
-        html: '📍',
-        iconSize: [40, 40],
-        iconAnchor: [20, 40],
-        popupAnchor: [0, -40]
+        html: '<img src="{{ asset('images/event-placeholder.svg') }}" alt="">',
+        iconSize: [26, 32],
+        iconAnchor: [13, 32],
+        popupAnchor: [0, -30]
     });
 
     // Добавляем маркер

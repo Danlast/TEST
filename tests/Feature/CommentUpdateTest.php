@@ -59,4 +59,40 @@ class CommentUpdateTest extends TestCase
         $comment->refresh();
         $this->assertSame('Обновлённый текст', $comment->content);
     }
+
+    public function test_user_can_reply_to_an_event_comment(): void
+    {
+        $user = User::create([
+            'username' => 'Ответивший',
+            'email' => 'reply@example.com',
+            'password' => 'password123',
+            'role' => 'user',
+        ]);
+
+        $event = Event::create([
+            'title' => 'Открытое мероприятие',
+            'date' => now()->addDay()->toDateTimeString(),
+            'place' => 'Казань',
+            'description' => 'Описание',
+            'image' => '',
+            'latitude' => 55.7887,
+            'longitude' => 49.1221,
+        ]);
+
+        $parent = Comment::create([
+            'user_id' => $user->id,
+            'event_id' => $event->id,
+            'content' => 'Исходный комментарий',
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('comments.reply', $parent), ['content' => 'Ответ на комментарий'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('comments', [
+            'parent_id' => $parent->id,
+            'event_id' => $event->id,
+            'content' => 'Ответ на комментарий',
+        ]);
+    }
 }
