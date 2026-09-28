@@ -26,6 +26,16 @@
         </div>
 
         <div class="form-group">
+            <label for="profile-privacy">Видимость профиля</label>
+            <select id="profile-privacy" name="is_profile_private" required>
+                <option value="0" {{ !old('is_profile_private', $user->is_profile_private) ? 'selected' : '' }}>Открытый для всех</option>
+                <option value="1" {{ old('is_profile_private', $user->is_profile_private) ? 'selected' : '' }}>Закрытый</option>
+            </select>
+            <small class="form-help">Закрытый профиль и все его разделы доступны только вам.</small>
+            @error('is_profile_private') <span class="error">* {{ $message }}</span> @enderror
+        </div>
+
+        <div class="form-group">
             <label>Аватар</label>
             <input type="file" name="avatar" accept="image/*">
             @error('avatar') <span class="error">* {{ $message }}</span> @enderror

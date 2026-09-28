@@ -1,7 +1,7 @@
 @extends('template.app')
 
 @section('page')
-<section class="form-card">
+<section class="content-shell exchange-page">
     <h2>Объявление</h2>
 
     <div class="detail-card">

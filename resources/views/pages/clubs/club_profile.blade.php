@@ -1,7 +1,7 @@
 @extends('template.app')
 
 @section('page')
-<section class="form-card">
+<section class="content-shell club-profile-page">
     <h2>{{ $club->username }}</h2>
     <p><strong>Email:</strong> {{ $club->email }}</p>
 
@@ -30,7 +30,7 @@
         </div>
 
         <h3>Назначить роль пользователю</h3>
-        <form action="{{ route('club.assignRole', $club->id) }}" method="POST" class="form-group">
+        <form action="{{ route('club.assignRole', $club->id) }}" method="POST" class="form-group" onsubmit="return confirm('Изменить роль пользователя в клубе?');">
             @csrf
             <label>Email пользователя</label>
             <input type="email" name="email" placeholder="user@example.com">
@@ -43,7 +43,7 @@
         </form>
 
         <h3>Забанить пользователя</h3>
-        <form action="{{ route('club.ban', $club->id) }}" method="POST" class="form-group">
+        <form action="{{ route('club.ban', $club->id) }}" method="POST" class="form-group" onsubmit="return confirm('Заблокировать пользователя в клубе?');">
             @csrf
             <label>Email пользователя</label>
             <input type="email" name="email" placeholder="user@example.com">
@@ -66,7 +66,7 @@
                 <li>
                     <a href="{{ route('user.profile', $member->id) }}">{{ $member->username }}</a>
                     @if(auth()->user() && auth()->user()->canManageClub($club) && auth()->user()->id !== $member->id)
-                        <form action="{{ route('club.ban', $club->id) }}" method="POST" class="inline-form">
+                        <form action="{{ route('club.ban', $club->id) }}" method="POST" class="inline-form" onsubmit="return confirm('Заблокировать пользователя в клубе?');">
                             @csrf
                             <input type="hidden" name="user_id" value="{{ $member->id }}">
                             <input type="submit" class="btn btn-delete" value="Забанить">
@@ -89,6 +89,26 @@
         </ul>
     @else
         <p>Мероприятий пока нет.</p>
+    @endif
+
+    <hr>
+    <h3>Комментарии</h3>
+    @auth
+        <form method="POST" action="{{ route('comments.profile.store', $club) }}" class="comment-form">
+            @csrf
+            <textarea name="content" rows="3" placeholder="Оставьте комментарий" required></textarea>
+            <button class="btn btn-primary form-submit">Отправить</button>
+        </form>
+    @endauth
+
+    @if($comments->isNotEmpty())
+        <div class="comments-list">
+            @foreach($comments as $comment)
+                <x-comment-item :comment="$comment" />
+            @endforeach
+        </div>
+    @else
+        <p class="empty-hint">Комментариев пока нет.</p>
     @endif
 </section>
 @endsection

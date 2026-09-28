@@ -27,27 +27,6 @@
         @endif
     </div>
 
-    <hr>
-
-    <h3>Комментарии</h3>
-    @auth
-        <form method="POST" action="{{ route('comments.profile.store', $user) }}" class="comment-form">
-            @csrf
-            <textarea name="content" rows="3" placeholder="Оставьте комментарий" required></textarea>
-            <button class="btn btn-primary form-submit">Отправить</button>
-        </form>
-    @endauth
-
-    @if($comments->isNotEmpty())
-        <div class="comments-list">
-            @foreach($comments as $comment)
-                <x-comment-item :comment="$comment" />
-            @endforeach
-        </div>
-    @else
-        <p class="empty-hint">Комментариев пока нет.</p>
-    @endif
-
     @if(!empty($user->description))
         <div class="profile-description">
             <strong>Описание:</strong><br>
@@ -122,6 +101,27 @@
             @endforeach
         @endif
     </div>
+
+    <hr>
+
+    <h3>Комментарии</h3>
+    @auth
+        <form method="POST" action="{{ route('comments.profile.store', $user) }}" class="comment-form">
+            @csrf
+            <textarea name="content" rows="3" placeholder="Оставьте комментарий" required></textarea>
+            <button class="btn btn-primary form-submit">Отправить</button>
+        </form>
+    @endauth
+
+    @if($comments->isNotEmpty())
+        <div class="comments-list">
+            @foreach($comments as $comment)
+                <x-comment-item :comment="$comment" />
+            @endforeach
+        </div>
+    @else
+        <p class="empty-hint">Комментариев пока нет.</p>
+    @endif
 </section>
 
 @endsection

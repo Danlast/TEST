@@ -25,18 +25,22 @@ Route::get('/ban', function () { return view('pages.ban'); })->name('ban');
 Route::get('/club-index', [ClubController::class, 'index'])->name('club.index');
 Route::get('/club-profile/{id}', [ClubController::class, 'profile'])->name('club.profile');
 Route::get('/club-edit/{id}', [ClubController::class, 'editProfile'])->name('club.edit');
-Route::post('/club-edit/{id}', [ClubController::class, 'updateProfile'])->name('club.update');
-Route::post('/club-join/{id}', [ClubController::class, 'join'])->name('club.join');
-Route::post('/club-leave/{id}', [ClubController::class, 'leave'])->name('club.leave');
-Route::post('/club-ban/{id}', [ClubController::class, 'banUser'])->name('club.ban');
-Route::post('/club-assign-role/{id}', [ClubController::class, 'assignRole'])->name('club.assignRole');
+Route::post('/club-edit/{id}', [ClubController::class, 'updateProfile'])->middleware('auth')->name('club.update');
+Route::post('/club-join/{id}', [ClubController::class, 'join'])->middleware('auth')->name('club.join');
+Route::post('/club-leave/{id}', [ClubController::class, 'leave'])->middleware('auth')->name('club.leave');
+Route::post('/club-ban/{id}', [ClubController::class, 'banUser'])->middleware('auth')->name('club.ban');
+Route::post('/club-assign-role/{id}', [ClubController::class, 'assignRole'])->middleware('auth')->name('club.assignRole');
 Route::get('/club-faq', function () { return view('pages.clubs.club_faq'); })->name('club.faq');
 Route::get('/event-index', [EventController::class, 'index'])->name('event.index');
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin-panel', [AdminController::class, 'index'])->name('admin.panel');
     Route::post('/admin-panel/users/{user}/role', [AdminController::class, 'updateUser'])->name('admin.users.update');
 });
-Route::get('/moderator-panel', function () { return view('pages.moderator_panel'); })->name('moderator.panel');
+Route::middleware('auth')->get('/moderator-panel', function () {
+    abort_unless(auth()->user()->role?->managesClubContent() || auth()->user()->role?->isStaff(), 403);
+
+    return view('pages.moderator_panel');
+})->name('moderator.panel');
 Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
 Route::get('/article/{article}', [ArticleController::class, 'show'])->name('articles.show');
 Route::get('/author-faq', function () { return view('pages.author_faq'); })->name('author.faq');

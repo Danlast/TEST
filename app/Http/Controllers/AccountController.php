@@ -9,6 +9,7 @@ use App\Models\User;                    // Для работы с моделью
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 
 class AccountController extends Controller
@@ -19,10 +20,13 @@ class AccountController extends Controller
 
     public function sendReg(Request $request){
         $data = $request->validate([
-            'username' => 'required',
-            'email' => 'required|email|unique:users,email',
+            'username' => ['required', 'string', 'max:255', Rule::unique('users', 'username')],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => 'required|min:6|confirmed',
             'password_confirmation' => 'required|min:6',
+        ], [
+            'username.unique' => 'Это имя пользователя уже занято.',
+            'email.unique' => 'Этот адрес электронной почты уже зарегистрирован.',
         ]);
 
         // запись в БД
@@ -62,13 +66,8 @@ class AccountController extends Controller
 
     public function profile() {
         $user = Auth::user();
-        $events = $user->registeredEvents()->get();
-        $bookedExchanges = \App\Models\BookExchange::where('booked_by_user_id', $user->id)->latest()->get();
-        $joinedClubs = $user->joinedClubs()->orderBy('username')->get();
-        $clubEvents = $user->clubEvents()->orderByDesc('created_at')->get();
-        $comments = $user->comments()->with('user')->latest()->get();
 
-        return view('pages.profile', compact('user', 'events', 'bookedExchanges', 'joinedClubs', 'clubEvents', 'comments'));
+        return view('pages.profile', $this->profileData($user));
     }
 
     public function editProfile()
@@ -83,10 +82,14 @@ class AccountController extends Controller
         $user = Auth::user();
 
         $data = $request->validate([
-            'username' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'username' => ['required', 'string', 'max:255', Rule::unique('users', 'username')->ignore($user->id)],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'description' => 'nullable|string|max:1000',
             'avatar' => 'nullable|image|max:5000',
+            'is_profile_private' => 'sometimes|boolean',
+        ], [
+            'username.unique' => 'Это имя пользователя уже занято.',
+            'email.unique' => 'Этот адрес электронной почты уже используется.',
         ]);
 
         if ($request->hasFile('avatar')) {
@@ -99,6 +102,10 @@ class AccountController extends Controller
 
             $path = $request->file('avatar')->store('avatars', 'public');
             $data['avatar'] = ltrim($path, '/');
+        }
+
+        if (! $request->has('is_profile_private')) {
+            $data['is_profile_private'] = (bool) ($user->is_profile_private ?? false);
         }
 
         $user->fill($data);
@@ -157,14 +164,24 @@ class AccountController extends Controller
     public function showUserProfile($id)
     {
         $user = User::findOrFail($id);
-        $events = $user->registeredEvents()->get();
-        $bookedExchanges = \App\Models\BookExchange::where('booked_by_user_id', $user->id)->latest()->get();
-        $joinedClubs = $user->joinedClubs()->orderBy('username')->get();
-        $clubEvents = $user->clubEvents()->orderByDesc('created_at')->get();
 
-        $comments = $user->comments()->with('user')->latest()->get();
+        if (! $user->canViewProfile(Auth::user())) {
+            return response()->view('pages.profile_hidden', [], 404);
+        }
 
-        return view('pages.user_profile', compact('user', 'events', 'bookedExchanges', 'joinedClubs', 'clubEvents', 'comments'));
+        return view('pages.user_profile', $this->profileData($user));
+    }
+
+    private function profileData(User $user): array
+    {
+        return [
+            'user' => $user,
+            'events' => $user->registeredEvents()->get(),
+            'bookedExchanges' => \App\Models\BookExchange::where('booked_by_user_id', $user->id)->latest()->get(),
+            'joinedClubs' => $user->joinedClubs()->orderBy('username')->get(),
+            'clubEvents' => $user->clubEvents()->orderByDesc('created_at')->get(),
+            'comments' => $user->profileComments()->with('user')->latest()->get(),
+        ];
     }
 
 }

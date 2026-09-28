@@ -19,6 +19,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $club_ban_reason
  * @property string|null $description
  * @property string|null $avatar
+ * @property bool $is_profile_private
  */
 class User extends Authenticatable
 {
@@ -36,6 +37,7 @@ class User extends Authenticatable
         'role',
         'description',
         'avatar',
+        'is_profile_private',
     ];
 
     /**
@@ -57,6 +59,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'role' => \App\Enums\UserRole::class,
         'password' => 'hashed',
+        'is_profile_private' => 'boolean',
     ];
 
     public function registrations()
@@ -109,6 +112,17 @@ class User extends Authenticatable
         return ! ($this->club_ban_club_id && (int) $this->club_ban_club_id === (int) $clubId);
     }
 
+    public function isBannedFromClub(int $clubId): bool
+    {
+        return (bool) $this->club_banned
+            && (int) $this->club_ban_club_id === $clubId;
+    }
+
+    public function canViewProfile(?User $viewer): bool
+    {
+        return ! $this->is_profile_private || ($viewer && $viewer->is($this));
+    }
+
     public function canParticipateInClubEvent($event): bool
     {
         return $this->canAccessClubContent($event->club_id);
@@ -152,6 +166,11 @@ class User extends Authenticatable
         return $this->hasMany(Comment::class);
     }
 
+    public function profileComments()
+    {
+        return $this->hasMany(Comment::class, 'profile_user_id');
+    }
+
     public function getAvatarPathAttribute()
     {
         return $this->avatar ? ltrim($this->avatar, '/') : null;
@@ -176,8 +195,14 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($comment->profile_user_id && $comment->profile_user_id === $this->id) {
-            return true;
+        if ($comment->profile_user_id && $comment->profileUser) {
+            if ($comment->profile_user_id === $this->id) {
+                return true;
+            }
+
+            if ($this->canManageClub($comment->profileUser)) {
+                return true;
+            }
         }
 
         return false;

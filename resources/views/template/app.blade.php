@@ -33,6 +33,20 @@
                 updateCount();
             });
         });
+
+        document.querySelectorAll('[data-toast]').forEach((toast) => {
+            const closeButton = toast.querySelector('[data-toast-close]');
+            let hideTimer;
+
+            const dismiss = () => {
+                window.clearTimeout(hideTimer);
+                toast.classList.add('toast-dismissed');
+                window.setTimeout(() => toast.remove(), 250);
+            };
+
+            closeButton?.addEventListener('click', dismiss);
+            hideTimer = window.setTimeout(dismiss, 6000);
+        });
     </script>
 </body>
 </html>

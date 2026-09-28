@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClubMembership;
+use App\Models\AuditLog;
 use App\Enums\UserRole;
 use App\Models\Event;
 use App\Models\User;
@@ -38,6 +39,15 @@ class ClubController extends Controller
             abort(404);
         }
 
+        if (
+            Auth::check()
+            && ! Auth::user()->role?->isStaff()
+            && Auth::user()->isBannedFromClub($club->id)
+            && Auth::id() !== $club->id
+        ) {
+            abort(404);
+        }
+
         $query = $request->input('member');
 
         $members = User::query()
@@ -45,7 +55,11 @@ class ClubController extends Controller
                 $q->where('club_id', $club->id);
             })
             ->where('id', '!=', $club->id)
-            ->where('club_banned', false)
+            ->where(function ($q) use ($club) {
+                $q->where('club_banned', false)
+                    ->orWhere('club_ban_club_id', '!=', $club->id)
+                    ->orWhereNull('club_ban_club_id');
+            })
             ->when($query, function ($q) use ($query) {
                 $q->where(function ($sub) use ($query) {
                     $sub->where('username', 'like', '%' . $query . '%')
@@ -59,7 +73,9 @@ class ClubController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('pages.clubs.club_profile', compact('club', 'members', 'events', 'query'));
+        $comments = $club->profileComments()->with('user')->latest()->get();
+
+        return view('pages.clubs.club_profile', compact('club', 'members', 'events', 'comments', 'query'));
     }
 
     public function join($id)
@@ -71,6 +87,8 @@ class ClubController extends Controller
         }
 
         $user = Auth::user();
+
+        abort_if($user->isBannedFromClub($club->id), 403, 'Вы заблокированы в этом клубе.');
 
         ClubMembership::firstOrCreate([
             'user_id' => $user->id,
@@ -125,6 +143,13 @@ class ClubController extends Controller
         $club->email = $request->input('email');
         $club->save();
 
+        AuditLog::create([
+            'actor_id' => Auth::id(),
+            'action' => 'club.profile_updated',
+            'target_type' => User::class,
+            'target_id' => $club->id,
+        ]);
+
         return redirect()->route('club.profile', $club->id)->with('success', 'Профиль клуба обновлён.');
     }
 
@@ -155,6 +180,14 @@ class ClubController extends Controller
         $targetUser->club_ban_club_id = $club->id;
         $targetUser->save();
 
+        AuditLog::create([
+            'actor_id' => Auth::id(),
+            'action' => 'club.user_banned',
+            'target_type' => User::class,
+            'target_id' => $targetUser->id,
+            'new_values' => ['club_id' => $club->id, 'reason' => $targetUser->club_ban_reason],
+        ]);
+
         return back()->with('success', 'Пользователь забанен в клубе.');
     }
 
@@ -175,9 +208,18 @@ class ClubController extends Controller
         ]);
 
         $targetUser = User::where('email', $request->input('email'))->firstOrFail();
-        $targetUser->role = $request->input('role');
-        $targetUser->club_id = $club->id;
+        $targetRole = UserRole::from($request->input('role'));
+        $targetUser->role = $targetRole;
+        $targetUser->club_id = $targetRole === UserRole::CLUB_MODERATOR ? $club->id : null;
         $targetUser->save();
+
+        AuditLog::create([
+            'actor_id' => Auth::id(),
+            'action' => 'club.role_assigned',
+            'target_type' => User::class,
+            'target_id' => $targetUser->id,
+            'new_values' => ['role' => $targetRole->value, 'club_id' => $targetUser->club_id],
+        ]);
 
         return back()->with('success', 'Роль назначена.');
     }

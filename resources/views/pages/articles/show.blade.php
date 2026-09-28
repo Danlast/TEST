@@ -1,12 +1,21 @@
 @extends('template.app')
 
 @section('page')
-<section class="form-card">
+<section class="content-shell article-page">
     <div class="detail-card">
         <div class="detail-content">
             <h2>{{ $article->title }}</h2>
             <p><strong>Описание:</strong> {{ $article->description }}</p>
-            <p><strong>Автор:</strong> {{ $article->club->username ?? $article->user->username ?? 'Пользователь' }}</p>
+            <p>
+                <strong>Автор:</strong>
+                @if($article->club)
+                    <a href="{{ route('user.profile', $article->club) }}">{{ $article->club->username }}</a>
+                @elseif($article->user)
+                    <a href="{{ route('user.profile', $article->user) }}">{{ $article->user->username }}</a>
+                @else
+                    Пользователь
+                @endif
+            </p>
             @if(!empty($article->tags))
                 <p><strong>Теги:</strong> {{ implode(', ', $article->tags) }}</p>
             @endif

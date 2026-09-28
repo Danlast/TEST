@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
+use App\Models\AuditLog;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -45,6 +46,12 @@ class CommentController extends Controller
             abort(403);
         }
 
+        if ($user->role === \App\Enums\UserRole::CLUB && Auth::user()->isBannedFromClub($user->id)) {
+            abort(403, 'Вы заблокированы в этом клубе.');
+        }
+
+        abort_unless($user->canViewProfile(Auth::user()), 404);
+
         Comment::create([
             'user_id' => Auth::id(),
             'profile_user_id' => $user->id,
@@ -86,6 +93,18 @@ class CommentController extends Controller
         }
 
         $comment->delete();
+
+        AuditLog::create([
+            'actor_id' => Auth::id(),
+            'action' => 'comment.deleted',
+            'target_type' => Comment::class,
+            'target_id' => $comment->id,
+            'metadata' => [
+                'event_id' => $comment->event_id,
+                'profile_user_id' => $comment->profile_user_id,
+                'article_id' => $comment->article_id,
+            ],
+        ]);
 
         return back()->with('success', 'Комментарий удалён.');
     }
