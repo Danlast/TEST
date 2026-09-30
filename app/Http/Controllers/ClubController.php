@@ -9,6 +9,7 @@ use App\Models\Event;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ClubController extends Controller
@@ -82,9 +83,15 @@ class ClubController extends Controller
             ->paginate(6)
             ->appends($request->query());
 
+        $moderators = User::query()
+            ->where('role', UserRole::CLUB_MODERATOR)
+            ->where('club_id', $club->id)
+            ->orderBy('username')
+            ->get(['id', 'username']);
+
         $comments = \App\Models\Comment::nestReplies($club->profileComments()->with(['user', 'repliedTo.user'])->oldest()->get());
 
-        return view('pages.clubs.club_profile', compact('club', 'members', 'events', 'comments', 'query', 'eventQuery'));
+        return view('pages.clubs.club_profile', compact('club', 'members', 'moderators', 'events', 'comments', 'query', 'eventQuery'));
     }
 
     public function join($id)
@@ -117,6 +124,10 @@ class ClubController extends Controller
 
         $user = Auth::user();
 
+        if ($user->role === UserRole::CLUB_MODERATOR) {
+            return $this->leaveAsModerator($club->id);
+        }
+
         ClubMembership::where('user_id', $user->id)
             ->where('club_id', $club->id)
             ->delete();
@@ -124,13 +135,46 @@ class ClubController extends Controller
         return back()->with('success', 'Вы покинули клуб.');
     }
 
+    public function leaveAsModerator($id)
+    {
+        $club = User::query()->whereKey($id)->where('role', UserRole::CLUB)->firstOrFail();
+        $moderator = Auth::user();
+
+        abort_unless(
+            $moderator->role === UserRole::CLUB_MODERATOR
+            && (int) $moderator->club_id === (int) $club->id,
+            403
+        );
+
+        DB::transaction(function () use ($club, $moderator) {
+            $moderator->forceFill([
+                'role' => UserRole::USER,
+                'club_id' => null,
+            ])->save();
+
+            ClubMembership::query()
+                ->where('user_id', $moderator->id)
+                ->where('club_id', $club->id)
+                ->delete();
+
+            AuditLog::create([
+                'actor_id' => $moderator->id,
+                'action' => 'club.moderator_left',
+                'target_type' => User::class,
+                'target_id' => $moderator->id,
+                'old_values' => ['role' => UserRole::CLUB_MODERATOR->value, 'club_id' => $club->id],
+                'new_values' => ['role' => UserRole::USER->value, 'club_id' => null],
+            ]);
+        });
+
+        return redirect()->route('club.profile', $club)->with('success', 'Вы покинули клуб и больше не являетесь его модератором.');
+    }
+
     public function editProfile($id)
     {
         $club = User::findOrFail($id);
 
-        if (!Auth::user()->canManageClub($club)) {
-            abort(403);
-        }
+        abort_unless(Auth::user()->canEditClubProfile($club), 403);
 
         return view('pages.clubs.club_edit', compact('club'));
     }
@@ -139,9 +183,7 @@ class ClubController extends Controller
     {
         $club = User::findOrFail($id);
 
-        if (!Auth::user()->canManageClub($club)) {
-            abort(403);
-        }
+        abort_unless(Auth::user()->canEditClubProfile($club), 403);
 
         $data = $request->validate([
             'username' => 'required|string|max:255',
@@ -229,9 +271,17 @@ class ClubController extends Controller
             'reason' => 'required_if:action,ban|nullable|string|max:255',
         ]);
 
+        if ($data['action'] !== 'ban') {
+            abort_unless(Auth::user()->canEditClubProfile($club), 403);
+        }
+
         $targetUser = User::where('email', $data['email'])->firstOrFail();
 
         if ($data['action'] === 'ban') {
+            if (Auth::user()->role === UserRole::CLUB_MODERATOR && $targetUser->role !== UserRole::USER) {
+                abort(403, 'Модератор клуба может блокировать только обычных пользователей.');
+            }
+
             if ($targetUser->id === $club->id) {
                 return back()->withErrors(['email' => 'Нельзя забанить самого клуба.']);
             }

@@ -1,8 +1,7 @@
 @extends('template.app')
 
 @section('page')
-<div class="container page-container">
-    <div class="page-shell">
+<section class="content">
         <div class="page-header">
             <div>
                 <h2 class="section-title page-title">Обмен книгами</h2>
@@ -46,8 +45,7 @@
                 <div id="exchange-map" class="map-container"></div>
             </div>
         </div>
-    </div>
-</div>
+    </section>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

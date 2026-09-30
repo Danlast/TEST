@@ -1,8 +1,7 @@
 @extends('template.app')
 
 @section('page')
-<div class="container page-container">
-    <div class="page-shell">
+<section class="content">
         <div class="page-header">
             <div>
                 <h2 class="section-title page-title">Статьи</h2>
@@ -33,24 +32,36 @@
             </div>
         </form>
 
-        <div class="object-grid">
+        <div class="article-list">
             @forelse($articles as $article)
-                <div class="card">
-                    <div class="card-content">
-                        <h3 class="card-title">{{ $article->title }}</h3>
-                        <p>{{ Str::limit($article->description ?: $article->content, 140) }}</p>
+                <article class="card article-card">
+                    <div class="card-content article-card-content">
+                        <div class="article-card-meta">
+                            @if($article->club)
+                                <a href="{{ route('club.profile', $article->club) }}">{{ $article->club->username }}</a>
+                            @elseif($article->user)
+                                <a href="{{ route('user.profile', $article->user) }}">{{ $article->user->username }}</a>
+                            @else
+                                <span>Пользователь</span>
+                            @endif
+                            <time datetime="{{ $article->created_at->toDateString() }}">{{ $article->created_at->format('d.m.Y') }}</time>
+                        </div>
+                        <h3 class="card-title">
+                            <a class="article-card-title-link" href="{{ route('articles.show', $article) }}">{{ $article->title }}</a>
+                        </h3>
                         @if(!empty($article->tags))
-                            <p><strong>Теги:</strong> {{ implode(', ', $article->tags) }}</p>
+                            <p class="article-card-tags">{{ implode(', ', $article->tags) }}</p>
                         @endif
-                        <p><strong>Автор:</strong> {{ $article->club->username ?? $article->user->username ?? 'Пользователь' }}</p>
-                        <a href="{{ route('articles.show', $article) }}" class="btn btn-outline">Читать</a>
+                        @if($article->banner_url)
+                            <img class="article-card-banner" src="{{ $article->banner_url }}" alt="Баннер статьи: {{ $article->title }}">
+                        @endif
+                        <a href="{{ route('articles.show', $article) }}" class="btn btn-outline article-card-read-more">Продолжить чтение</a>
                     </div>
-                </div>
+                </article>
             @empty
                 <p>Пока нет опубликованных статей.</p>
             @endforelse
         </div>
         {{ $articles->links() }}
-    </div>
-</div>
+    </section>
 @endsection

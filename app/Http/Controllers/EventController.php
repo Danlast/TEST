@@ -192,13 +192,11 @@ class EventController extends Controller
 
     public function image($path)
     {
-        $filePath = storage_path('app/public/' . $path);
+        $disk = Storage::disk('public');
 
-        if (! file_exists($filePath)) {
-            abort(404);
-        }
+        abort_unless($disk->exists($path), 404);
 
-        return response()->file($filePath);
+        return response()->file($disk->path($path));
     }
 
     public function delete($id){

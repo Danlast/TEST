@@ -1,6 +1,7 @@
 @extends('template.app')
 @section('page')
 
+<section class="content">
 <div class="delete-confirm">
     <div class="delete-confirm-header">Подтверждение удаления</div>
     <div class="delete-confirm-body">
@@ -16,6 +17,7 @@
         </div>
     </div>
 </div>
+</section>
 
 
 @endsection

@@ -1,7 +1,7 @@
 @extends('template.app')
 @section('page')
 
-<div class="detail-card event-detail-card">
+<section class="content event-detail-card">
     <div class="detail-img">
         <img src="{{ $event->image_url }}" alt="" height="100%" width="100%">
     </div>
@@ -91,7 +91,7 @@
             @endif
         </div>
     </div>
-</div>
+</section>
 
 <script>
     document.querySelector('[data-attendee-show-more]')?.addEventListener('click', function () {

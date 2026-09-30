@@ -174,6 +174,8 @@ class AccountController extends Controller
 
     private function profileData(User $user): array
     {
+        $user->loadMissing('club');
+
         return [
             'user' => $user,
             'events' => $user->registeredEvents()->get(),

@@ -1,7 +1,7 @@
 @extends('template.app')
 
 @section('page')
-<div class="content-shell">
+<section class="content">
         <div class="page-header">
             <div>
                 <h2 class="section-title page-title">Все мероприятия</h2>
@@ -53,5 +53,5 @@
             @endforelse
         </div>
         {{ $events->links() }}
-</div>
+    </section>
 @endsection

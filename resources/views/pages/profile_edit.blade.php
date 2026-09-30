@@ -1,7 +1,7 @@
 @extends('template.app')
 @section('page')
 
-<section class="profile-card">
+<section class="content-shell form-card">
     <h2>Редактирование профиля</h2>
     <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
         @csrf

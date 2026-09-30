@@ -1,7 +1,7 @@
 @extends('template.app')
 
 @section('page')
-    <div class="content-shell start-page">
+    <div class="content start-page">
         <section class="start-map-section" aria-labelledby="map-title">
             <h2 id="map-title" class="section-title map-title">Карта мероприятий</h2>
             <div id="map" class="map-container"></div>

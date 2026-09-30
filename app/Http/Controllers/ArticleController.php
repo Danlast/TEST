@@ -8,7 +8,7 @@ use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class ArticleController extends Controller
 {
@@ -63,11 +63,13 @@ class ArticleController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'content' => 'required|string',
+            'banner' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5000',
             'tags' => 'nullable|array',
             'tags.*' => 'nullable|string',
         ]);
 
         $validated['tags'] = array_values(array_filter($validated['tags'] ?? []));
+        $validated['banner'] = $request->file('banner')?->store('article-banners', 'public');
         $validated['user_id'] = $user->id;
         $validated['club_id'] = null;
         $validated['is_published'] = true;
@@ -112,13 +114,25 @@ class ArticleController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'content' => 'required|string',
+            'banner' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5000',
             'tags' => 'nullable|array',
             'tags.*' => 'nullable|string',
         ]);
 
         $validated['tags'] = array_values(array_filter($validated['tags'] ?? []));
 
+        if ($request->hasFile('banner')) {
+            $oldBanner = $article->banner;
+            $validated['banner'] = $request->file('banner')->store('article-banners', 'public');
+        } else {
+            unset($validated['banner']);
+        }
+
         $article->update($validated);
+
+        if (! empty($oldBanner)) {
+            Storage::disk('public')->delete($oldBanner);
+        }
 
         return redirect()->route('articles.show', $article)->with('success', 'Статья обновлена');
     }
@@ -134,7 +148,12 @@ class ArticleController extends Controller
     {
         abort_unless($article->canBeManagedBy(Auth::user()), 403);
 
+        $banner = $article->banner;
         $article->delete();
+
+        if ($banner) {
+            Storage::disk('public')->delete($banner);
+        }
 
         return redirect()->route('articles.index')->with('success', 'Статья удалена');
     }

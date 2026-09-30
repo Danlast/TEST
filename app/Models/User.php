@@ -223,4 +223,9 @@ class User extends Authenticatable
             && (int) $this->club_id === (int) $club->id;
     }
 
+    public function canEditClubProfile(User $club): bool
+    {
+        return $this->role === \App\Enums\UserRole::CLUB && $this->is($club);
+    }
+
 }

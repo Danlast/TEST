@@ -1,7 +1,7 @@
 @extends('template.app')
 
 @section('page')
-<section class="form-card">
+<section class="content-shell form-card">
     <h2>Редактирование объявления</h2>
     <form method="POST" action="{{ route('exchange.update', $exchange->id) }}">
         @csrf

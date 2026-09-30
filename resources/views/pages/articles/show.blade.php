@@ -1,8 +1,8 @@
 @extends('template.app')
 
 @section('page')
-<section class="content-shell article-page">
-    <div class="detail-card">
+<section class="content article-page">
+    <div class="article-content">
         <div class="detail-content">
             <h2>{{ $article->title }}</h2>
             <p><strong>Описание:</strong> {{ $article->description }}</p>

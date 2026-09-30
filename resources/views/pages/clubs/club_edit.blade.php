@@ -1,7 +1,7 @@
 @extends('template.app')
 
 @section('page')
-<section class="form-card">
+<section class="content-shell form-card">
     <h2>Редактировать профиль клуба</h2>
 
     <form method="POST" action="{{ route('club.update', $club->id) }}" class="form-group" enctype="multipart/form-data">

@@ -1,7 +1,7 @@
 @extends('template.app')
 
 @section('page')
-<section class="form-card">
+<section class="content">
     <h2>Панель модератора</h2>
 
     <div class="form-group">

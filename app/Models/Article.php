@@ -45,6 +45,11 @@ class Article extends Model
         return $this->hasMany(Comment::class);
     }
 
+    public function getBannerUrlAttribute(): ?string
+    {
+        return $this->banner ? route('event.image', ['path' => $this->banner]) : null;
+    }
+
     public function canBeManagedBy(User $user): bool
     {
         if ($user->role?->isStaff()) {

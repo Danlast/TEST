@@ -1,10 +1,10 @@
 @extends('template.app')
 
 @section('page')
-<section class="content-shell exchange-page">
+<section class="content exchange-page">
     <h2>Объявление</h2>
 
-    <div class="detail-card exchange-detail-card">
+    <div class="exchange-detail-card">
         <div class="detail-content exchange-detail-content">
             <h2>{{ $exchange->title }}</h2>
             <span class="exchange-status {{ $exchange->status === 'booked' ? 'is-booked' : 'is-active' }}">

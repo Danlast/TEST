@@ -2,7 +2,7 @@
 @section('page')
 
 <!-- ========== ИЗМЕНЕНИ МЕРОПРИЯТИЯ ========== -->
-<section class="form-card">
+<section class="content-shell form-card">
     <h2>Изменить мероприятие</h2>
     <form id="event-edit-form" method="POST" action="{{route('event.update', $event->id)}}" enctype="multipart/form-data">
         @csrf

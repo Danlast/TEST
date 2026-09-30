@@ -1,7 +1,7 @@
 @extends('template.app')
 
 @section('page')
-<section class="form-card">
+<section class="content">
     <h2>Удаление статьи</h2>
     <p>Вы уверены, что хотите удалить статью <strong>{{ $article->title }}</strong>?</p>
     <form method="POST" action="{{ route('articles.destroy', $article) }}" class="section-top-sm">

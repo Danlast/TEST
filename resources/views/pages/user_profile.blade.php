@@ -1,7 +1,7 @@
 @extends('template.app')
 @section('page')
 
-<section class="content-shell profile-card">
+<section class="content">
     <div class="profile-header">
         <div class="profile-header-identity">
             <div class="profile-avatar-wrap">
@@ -16,6 +16,9 @@
             <div class="profile-identity-text">
                 <h2>Профиль: {{ $user->username }}</h2>
                 <p class="profile-email">{{ $user->email }}</p>
+                @if($user->role === \App\Enums\UserRole::CLUB_MODERATOR && $user->club)
+                    <p class="profile-club">Модератор клуба: <a href="{{ route('club.profile', $user->club) }}">{{ $user->club->username }}</a></p>
+                @endif
             </div>
         </div>
     </div>

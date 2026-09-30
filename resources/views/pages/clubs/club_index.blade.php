@@ -1,8 +1,7 @@
 @extends('template.app')
 
 @section('page')
-<div class="container page-container">
-    <div class="page-shell">
+<section class="content">
         <div class="page-header">
             <div>
                 <h2 class="section-title page-title">Клубы</h2>
@@ -36,6 +35,5 @@
             @endif
         </div>
         {{ $clubs->links() }}
-    </div>
-</div>
+    </section>
 @endsection

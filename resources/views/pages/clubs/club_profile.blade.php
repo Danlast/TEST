@@ -1,7 +1,7 @@
 @extends('template.app')
 
 @section('page')
-<section class="content-shell club-profile-page">
+<section class="content club-profile-page">
     <div class="profile-header">
         <div class="profile-header-identity">
             <div class="profile-avatar-wrap">
@@ -19,9 +19,22 @@
             </div>
         </div>
         @auth
-            @if(auth()->user()->canManageClub($club))
-                <a href="{{ route('club.edit', $club->id) }}" class="btn btn-outline">Редактировать профиль</a>
-            @endif
+            <div class="club-profile-actions">
+                @if(auth()->user()->canEditClubProfile($club))
+                    <a href="{{ route('club.edit', $club->id) }}" class="btn btn-outline">Редактировать профиль</a>
+                @endif
+                @if(auth()->user()->role === \App\Enums\UserRole::CLUB_MODERATOR && (int) auth()->user()->club_id === (int) $club->id)
+                    <details class="club-action-menu">
+                        <summary aria-label="Действия с клубом">&hellip;</summary>
+                        <div class="club-action-menu-panel">
+                            <form action="{{ route('club.leave', $club) }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите покинуть клуб и отказаться от роли модератора?');">
+                                @csrf
+                                <button type="submit" class="btn btn-delete">Покинуть клуб</button>
+                            </form>
+                        </div>
+                    </details>
+                @endif
+            </div>
         @endauth
     </div>
 
@@ -34,7 +47,9 @@
 
     @auth
         @if(auth()->user()->id !== $club->id)
-            @if(auth()->user()->club_id === $club->id)
+            @if(auth()->user()->role === \App\Enums\UserRole::CLUB_MODERATOR && (int) auth()->user()->club_id === (int) $club->id)
+                {{-- The moderator exit action is available in the club actions menu above. --}}
+            @elseif(auth()->user()->club_id === $club->id)
                 <form action="{{ route('club.leave', $club->id) }}" method="POST" class="flex">
                     @csrf
                     <input type="submit" class="btn btn-delete" value="Отписаться">
@@ -47,6 +62,18 @@
             @endif
         @endif
     @endauth
+
+    <hr>
+    <h3>Модераторы клуба</h3>
+    @if($moderators->isNotEmpty())
+        <ul class="club-moderator-list">
+            @foreach($moderators as $moderator)
+                <li><a href="{{ route('user.profile', $moderator) }}">{{ $moderator->username }}</a></li>
+            @endforeach
+        </ul>
+    @else
+        <p class="empty-hint">Модераторов пока нет.</p>
+    @endif
 
     @if(auth()->user() && auth()->user()->canManageClub($club))
         <hr>
@@ -91,9 +118,11 @@
             <input type="email" name="email" value="{{ old('email') }}" placeholder="user@example.com" required>
             <label>Действие</label>
             <select name="action" data-club-member-action required>
-                <option value="club_moderator" @selected(old('action') === 'club_moderator')>Назначить модератором</option>
-                <option value="user" @selected(old('action') === 'user')>Снять роль модератора</option>
-                <option value="ban" @selected(old('action') === 'ban')>Забанить в клубе</option>
+                @if(auth()->user()->role === \App\Enums\UserRole::CLUB)
+                    <option value="club_moderator" @selected(old('action') === 'club_moderator')>Назначить модератором</option>
+                    <option value="user" @selected(old('action') === 'user')>Снять роль модератора</option>
+                @endif
+                <option value="ban" @selected(old('action') === 'ban')>Забанить обычного пользователя</option>
             </select>
             <div data-ban-reason hidden>
                 <label for="club-ban-reason">Причина бана</label>

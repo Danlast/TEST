@@ -1,10 +1,16 @@
 @extends('template.app')
 
 @section('page')
-<section class="form-card">
+<section class="content-shell form-card">
     <h2>Новая статья</h2>
-    <form method="POST" action="{{ route('articles.store') }}">
+    <form method="POST" action="{{ route('articles.store') }}" enctype="multipart/form-data">
         @csrf
+        <div class="form-group">
+            <label for="banner">Баннер статьи</label>
+            <input type="file" name="banner" id="banner" accept="image/jpeg,image/png,image/webp">
+            @error('banner') <span class="error">* {{ $message }}</span> @enderror
+        </div>
+
         <div class="form-group">
             <label for="title">Заголовок</label>
             <input type="text" name="title" id="title" value="{{ old('title') }}" required>

@@ -1,7 +1,7 @@
 @extends('template.app')
 
 @section('page')
-<section class="form-card">
+<section class="content">
     <h2>Удалить объявление</h2>
     <p>Вы уверены, что хотите удалить это объявление?</p>
     <form method="POST" action="{{ route('exchange.destroy', $exchange->id) }}">
