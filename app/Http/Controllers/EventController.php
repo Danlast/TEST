@@ -120,8 +120,11 @@ class EventController extends Controller
     {
         $event = Event::with(['club', 'registrations.user'])->findOrFail($id);
         $comments = Comment::nestReplies($event->comments()->with(['user', 'repliedTo.user'])->oldest()->get());
+        $isBannedFromClub = Auth::check()
+            && $event->club_id
+            && Auth::user()->isBannedFromClub((int) $event->club_id);
 
-        return view('pages.events.event_show', compact('event', 'comments'));
+        return view('pages.events.event_show', compact('event', 'comments', 'isBannedFromClub'));
     }
 
     public function edit($id)

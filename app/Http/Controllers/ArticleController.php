@@ -4,21 +4,32 @@ namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
 use App\Models\Article;
+use App\Models\ArticleView;
 use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ArticleController extends Controller
 {
     public function index(Request $request)
     {
         $query = trim((string) $request->input('q', ''));
+        $sort = $request->input('sort', 'newest');
+        $sortOptions = ['newest', 'oldest', 'best_week', 'best_month', 'best_year', 'best_all'];
+        if (! in_array($sort, $sortOptions, true)) {
+            $sort = 'newest';
+        }
         $selectedTags = array_values(array_filter(array_map('trim', (array) $request->input('tags', []))));
 
         $articlesQuery = Article::query()
             ->with(['user', 'club'])
+            ->withCount(['comments', 'likes', 'views'])
+            ->when(Auth::check(), fn ($articles) => $articles->withExists([
+                'likes as liked_by_user' => fn ($likes) => $likes->where('users.id', Auth::id()),
+            ]))
             ->where('is_published', true)
             ->when($query !== '', function ($q) use ($query) {
                 $q->where(function ($sub) use ($query) {
@@ -32,13 +43,32 @@ class ArticleController extends Controller
                 foreach ($selectedTags as $tag) {
                     $q->whereJsonContains('tags', $tag);
                 }
-            })
-            ->latest();
+            });
+
+        if ($sort === 'newest') {
+            $articlesQuery->orderByDesc('created_at')->orderByDesc('id');
+        } elseif ($sort === 'oldest') {
+            $articlesQuery->orderBy('created_at')->orderBy('id');
+        } elseif ($sort === 'best_all') {
+            $articlesQuery->orderByDesc('likes_count')->orderByDesc('created_at');
+        } else {
+            $since = match ($sort) {
+                'best_week' => now()->subWeek(),
+                'best_month' => now()->subMonth(),
+                'best_year' => now()->subYear(),
+            };
+
+            $articlesQuery
+                ->withCount(['likes as period_likes_count' => fn ($likes) => $likes
+                    ->where('article_likes.created_at', '>=', $since)])
+                ->orderByDesc('period_likes_count')
+                ->orderByDesc('created_at');
+        }
 
         $articles = $articlesQuery->paginate(12);
         $articles->appends($request->query());
 
-        return view('pages.articles.index', compact('articles', 'query', 'selectedTags'))
+        return view('pages.articles.index', compact('articles', 'query', 'selectedTags', 'sort'))
             ->with('availableTags', $this->availableTags());
     }
 
@@ -91,12 +121,32 @@ class ArticleController extends Controller
         return redirect()->route('articles.index')->with('success', 'Статья опубликована');
     }
 
-    public function show(Article $article)
+    public function show(Request $request, Article $article)
     {
+        if (Auth::check()) {
+            $visitorKey = 'user:' . Auth::id();
+        } else {
+            $guestKey = $request->session()->get('article_visitor_key');
+            if (! $guestKey) {
+                $guestKey = Str::random(40);
+                $request->session()->put('article_visitor_key', $guestKey);
+            }
+            $visitorKey = 'guest:' . $guestKey;
+        }
+
+        ArticleView::firstOrCreate([
+            'article_id' => $article->id,
+            'visitor_key' => $visitorKey,
+        ], [
+            'user_id' => Auth::id(),
+        ]);
+
         $article->load(['user', 'club']);
+        $article->loadCount(['comments', 'likes', 'views']);
+        $likedByUser = Auth::check() && $article->likes()->where('users.id', Auth::id())->exists();
         $comments = Comment::nestReplies($article->comments()->with(['user', 'repliedTo.user'])->oldest()->get());
 
-        return view('pages.articles.show', compact('article', 'comments'));
+        return view('pages.articles.show', compact('article', 'comments', 'likedByUser'));
     }
 
     public function edit(Article $article)

@@ -4,14 +4,36 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\Article;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class FavoriteController extends Controller
 {
-    public function store($id)
+    public function store(Request $request, $id)
     {
         if (! Auth::check()) {
             abort(403);
+        }
+
+        if ($request->query('type') === 'article') {
+            $article = Article::query()->where('is_published', true)->findOrFail($id);
+            $user = Auth::user();
+
+            if (! $user->canAccessClubContent($article->club_id)) {
+                return back()->with('error', 'Вы были забанены в данном клубе.');
+            }
+
+            $like = $article->likes()->where('users.id', $user->id)->first();
+            if ($like) {
+                $article->likes()->detach($user->id);
+
+                return redirect()->to(url()->previous() . '#article-engagement')->with('success', 'Лайк удалён.');
+            }
+
+            $article->likes()->attach($user->id);
+
+            return redirect()->to(url()->previous() . '#article-engagement')->with('success', 'Статья понравилась вам.');
         }
 
         $event = Event::findOrFail($id);

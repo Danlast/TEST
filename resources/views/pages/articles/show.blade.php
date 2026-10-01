@@ -4,31 +4,51 @@
 <section class="content article-page">
     <div class="article-content">
         <div class="detail-content">
-            <h2>{{ $article->title }}</h2>
-            <p><strong>Описание:</strong> {{ $article->description }}</p>
-            <p>
-                <strong>Автор:</strong>
+            <div class="article-detail-meta">
                 @if($article->club)
-                    <a href="{{ route('user.profile', $article->club) }}">{{ $article->club->username }}</a>
+                    <a href="{{ route('club.profile', $article->club) }}">{{ $article->club->username }}</a>
                 @elseif($article->user)
                     <a href="{{ route('user.profile', $article->user) }}">{{ $article->user->username }}</a>
                 @else
-                    Пользователь
+                    <span>Пользователь</span>
                 @endif
-            </p>
+                <div class="article-detail-meta-trailing">
+                    <span class="article-card-view-count" aria-label="Просмотры: {{ $article->views_count }}" title="Просмотры">
+                        <span aria-hidden="true">&#x1F441;</span> {{ $article->views_count }}
+                    </span>
+                    <time datetime="{{ $article->created_at->toDateString() }}">{{ $article->created_at->format('d.m.Y') }}</time>
+                </div>
+            </div>
+
+            <div class="article-detail-title-row">
+                <h2>{{ $article->title }}</h2>
+                @auth
+                    @if($article->canBeManagedBy(auth()->user()))
+                        <div class="article-detail-actions">
+                            <a href="{{ route('articles.edit', $article) }}" class="btn btn-edit">Редактировать</a>
+                            <a href="{{ route('articles.delete', $article) }}" class="btn btn-delete">Удалить</a>
+                        </div>
+                    @endif
+                @endauth
+            </div>
+
             @if(!empty($article->tags))
-                <p><strong>Теги:</strong> {{ implode(', ', $article->tags) }}</p>
+                <p class="article-detail-tags">{{ implode(', ', $article->tags) }}</p>
             @endif
             <div class="content-prose">{{ $article->content }}</div>
 
-            @auth
-                @if($article->canBeManagedBy(auth()->user()))
-                    <div class="flex section-top-lg">
-                        <a href="{{ route('articles.edit', $article) }}" class="btn btn-edit">Редактировать</a>
-                        <a href="{{ route('articles.delete', $article) }}" class="btn btn-delete">Удалить</a>
-                    </div>
-                @endif
-            @endauth
+            <div class="article-card-engagement" id="article-engagement" aria-label="Статистика статьи">
+                <span aria-label="Лайки: {{ $article->likes_count }}" title="Лайки"><span aria-hidden="true">&#x2661;</span> {{ $article->likes_count }}</span>
+                <span aria-label="Комментарии: {{ $article->comments_count }}" title="Комментарии"><span aria-hidden="true">&#x1F4AC;</span> {{ $article->comments_count }}</span>
+                @auth
+                    <form method="POST" action="{{ route('favorites.store', ['id' => $article->id, 'type' => 'article']) }}">
+                        @csrf
+                        <button type="submit" class="article-like-button {{ $likedByUser ? 'is-liked' : '' }}" aria-pressed="{{ $likedByUser ? 'true' : 'false' }}">
+                            {{ $likedByUser ? 'Убрать лайк' : 'Нравится' }}
+                        </button>
+                    </form>
+                @endauth
+            </div>
         </div>
     </div>
 

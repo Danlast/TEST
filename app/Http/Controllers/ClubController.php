@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\ClubMembership;
 use App\Models\AuditLog;
+use App\Models\Article;
+use App\Models\Comment;
 use App\Enums\UserRole;
 use App\Models\Event;
+use App\Models\EventRegistration;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -47,8 +50,19 @@ class ClubController extends Controller
             && Auth::user()->isBannedFromClub($club->id)
             && Auth::id() !== $club->id
         ) {
-            abort(404);
+            return response()->view('pages.club_banned', [
+                'club' => $club,
+                'banReason' => Auth::user()->club_ban_reason,
+            ], 403);
         }
+
+        $isMember = Auth::check() && ClubMembership::query()
+            ->where('user_id', Auth::id())
+            ->where('club_id', $club->id)
+            ->exists();
+        $isClubModerator = Auth::check()
+            && Auth::user()->role === UserRole::CLUB_MODERATOR
+            && (int) Auth::user()->club_id === (int) $club->id;
 
         $query = $request->input('member');
 
@@ -91,7 +105,7 @@ class ClubController extends Controller
 
         $comments = \App\Models\Comment::nestReplies($club->profileComments()->with(['user', 'repliedTo.user'])->oldest()->get());
 
-        return view('pages.clubs.club_profile', compact('club', 'members', 'moderators', 'events', 'comments', 'query', 'eventQuery'));
+        return view('pages.clubs.club_profile', compact('club', 'members', 'moderators', 'events', 'comments', 'query', 'eventQuery', 'isMember', 'isClubModerator'));
     }
 
     public function join($id)
@@ -237,18 +251,11 @@ class ClubController extends Controller
             return back()->withErrors(['user_id' => 'Нельзя забанить самого клуба.']);
         }
 
-        $targetUser->club_banned = true;
-        $targetUser->club_ban_reason = $request->input('reason');
-        $targetUser->club_ban_club_id = $club->id;
-        $targetUser->save();
+        if (Auth::user()->role === UserRole::CLUB_MODERATOR && $targetUser->role !== UserRole::USER) {
+            abort(403, 'Модератор клуба может блокировать только обычных пользователей.');
+        }
 
-        AuditLog::create([
-            'actor_id' => Auth::id(),
-            'action' => 'club.user_banned',
-            'target_type' => User::class,
-            'target_id' => $targetUser->id,
-            'new_values' => ['club_id' => $club->id, 'reason' => $targetUser->club_ban_reason],
-        ]);
+        $this->banFromClub($club, $targetUser, $request->input('reason'));
 
         return back()->with('success', 'Пользователь забанен в клубе.');
     }
@@ -267,11 +274,12 @@ class ClubController extends Controller
                 UserRole::CLUB_MODERATOR->value,
                 UserRole::USER->value,
                 'ban',
+                'unban',
             ])],
             'reason' => 'required_if:action,ban|nullable|string|max:255',
         ]);
 
-        if ($data['action'] !== 'ban') {
+        if (in_array($data['action'], [UserRole::CLUB_MODERATOR->value, UserRole::USER->value], true)) {
             abort_unless(Auth::user()->canEditClubProfile($club), 403);
         }
 
@@ -286,20 +294,37 @@ class ClubController extends Controller
                 return back()->withErrors(['email' => 'Нельзя забанить самого клуба.']);
             }
 
-            $targetUser->club_banned = true;
-            $targetUser->club_ban_reason = $data['reason'];
-            $targetUser->club_ban_club_id = $club->id;
-            $targetUser->save();
+            $this->banFromClub($club, $targetUser, $data['reason'] ?? null);
+
+            return back()->with('success', 'Пользователь забанен в клубе.');
+        }
+
+        if ($data['action'] === 'unban') {
+            if (Auth::user()->role === UserRole::CLUB_MODERATOR && $targetUser->role !== UserRole::USER) {
+                abort(403, 'Модератор клуба может разблокировать только обычных пользователей.');
+            }
+
+            if (! $targetUser->isBannedFromClub((int) $club->id)) {
+                return back()->withErrors(['email' => 'Пользователь не заблокирован в этом клубе.']);
+            }
+
+            $oldBanReason = $targetUser->club_ban_reason;
+            $targetUser->forceFill([
+                'club_banned' => false,
+                'club_ban_club_id' => null,
+                'club_ban_reason' => null,
+            ])->save();
 
             AuditLog::create([
                 'actor_id' => Auth::id(),
-                'action' => 'club.user_banned',
+                'action' => 'club.user_unbanned',
                 'target_type' => User::class,
                 'target_id' => $targetUser->id,
-                'new_values' => ['club_id' => $club->id, 'reason' => $targetUser->club_ban_reason],
+                'old_values' => ['club_id' => $club->id, 'reason' => $oldBanReason],
+                'new_values' => ['club_id' => null, 'reason' => null],
             ]);
 
-            return back()->with('success', 'Пользователь забанен в клубе.');
+            return back()->with('success', 'Пользователь разблокирован в клубе.');
         }
 
         $targetRole = UserRole::from($data['action']);
@@ -316,5 +341,54 @@ class ClubController extends Controller
         ]);
 
         return back()->with('success', 'Роль назначена.');
+    }
+
+    private function banFromClub(User $club, User $targetUser, ?string $reason): void
+    {
+        $clubEventIds = Event::query()->where('club_id', $club->id)->select('id');
+        $clubArticleIds = Article::query()->where('club_id', $club->id)->select('id');
+
+        DB::transaction(function () use ($club, $targetUser, $reason, $clubEventIds, $clubArticleIds) {
+            $targetUser->forceFill([
+                'club_banned' => true,
+                'club_ban_reason' => $reason,
+                'club_ban_club_id' => $club->id,
+            ])->save();
+
+            ClubMembership::query()
+                ->where('user_id', $targetUser->id)
+                ->where('club_id', $club->id)
+                ->delete();
+
+            EventRegistration::query()
+                ->where('user_id', $targetUser->id)
+                ->whereIn('event_id', $clubEventIds)
+                ->delete();
+
+            $comments = Comment::query()
+                ->where('user_id', $targetUser->id)
+                ->where(function ($query) use ($club, $clubEventIds, $clubArticleIds) {
+                    $query->where('profile_user_id', $club->id)
+                        ->orWhereIn('event_id', $clubEventIds)
+                        ->orWhereIn('article_id', $clubArticleIds);
+                })
+                ->get();
+
+            foreach ($comments as $comment) {
+                if ($comment->replies()->exists() || $comment->replyReferences()->exists()) {
+                    $comment->update(['content' => Comment::DELETED_CONTENT]);
+                } else {
+                    $comment->delete();
+                }
+            }
+
+            AuditLog::create([
+                'actor_id' => Auth::id(),
+                'action' => 'club.user_banned',
+                'target_type' => User::class,
+                'target_id' => $targetUser->id,
+                'new_values' => ['club_id' => $club->id, 'reason' => $reason],
+            ]);
+        });
     }
 }

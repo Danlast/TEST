@@ -1,3 +1,5 @@
+@props(['comment', 'depth' => 0, 'allowReplies' => true])
+
 <div class="comment-thread" data-comment-id="{{ $comment->id }}" data-comment-depth="{{ $depth }}">
     <div class="comment-item">
         @php($commentAvatarUrl = $comment->user?->avatar_url)
@@ -25,7 +27,7 @@
         </div>
         @auth
             <div class="comment-actions">
-                @if($depth <= 5 && $comment->content !== 'Комментарий был удален')
+                @if($allowReplies && $depth <= 5 && $comment->content !== \App\Models\Comment::DELETED_CONTENT)
                     <details class="comment-reply">
                         <summary>Ответить</summary>
                         <form method="POST" action="{{ route('comments.reply', $comment) }}" class="comment-reply-form">
@@ -35,7 +37,7 @@
                         </form>
                     </details>
                 @endif
-                @if($comment->content !== 'Комментарий был удален' && (auth()->user()->canDeleteComment($comment) || auth()->id() === $comment->user_id))
+                @if($comment->content !== \App\Models\Comment::DELETED_CONTENT && (auth()->user()->canDeleteComment($comment) || auth()->id() === $comment->user_id))
                     <button type="button" class="comment-menu-toggle" aria-label="Действия с комментарием" onclick="var menu=this.parentNode.querySelector('.comment-menu'); menu.classList.toggle('is-open');">...</button>
                     <div class="comment-menu">
                         @if(auth()->id() === $comment->user_id)
@@ -64,7 +66,7 @@
             <summary>Ответы ({{ $comment->replies->count() }})</summary>
             <div class="comment-replies-list">
                 @foreach($comment->replies as $reply)
-                    <x-comment-item :comment="$reply" :depth="$depth + 1" />
+                    <x-comment-item :comment="$reply" :depth="$depth + 1" :allow-replies="$allowReplies" />
                 @endforeach
             </div>
         </details>

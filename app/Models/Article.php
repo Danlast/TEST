@@ -45,6 +45,16 @@ class Article extends Model
         return $this->hasMany(Comment::class);
     }
 
+    public function likes()
+    {
+        return $this->belongsToMany(User::class, 'article_likes')->withTimestamps();
+    }
+
+    public function views()
+    {
+        return $this->hasMany(ArticleView::class);
+    }
+
     public function getBannerUrlAttribute(): ?string
     {
         return $this->banner ? route('event.image', ['path' => $this->banner]) : null;

@@ -45,11 +45,13 @@ class ClubModerationPermissionsTest extends TestCase
             ->get(route('profile'))
             ->assertOk()
             ->assertSee('Модератор клуба')
+            ->assertDontSee('Профиль:')
             ->assertSee(route('club.profile', $club));
 
         $this->get(route('user.profile', $moderator))
             ->assertOk()
             ->assertSee('Модератор клуба')
+            ->assertDontSee('Профиль:')
             ->assertSee(route('club.profile', $club));
 
         $this->actingAs($club)
@@ -113,10 +115,39 @@ class ClubModerationPermissionsTest extends TestCase
         ]);
     }
 
+    public function test_regular_member_can_leave_from_the_club_actions_menu(): void
+    {
+        $club = $this->user('club', UserRole::CLUB);
+        $member = $this->user('member', UserRole::USER);
+        ClubMembership::create(['user_id' => $member->id, 'club_id' => $club->id]);
+
+        $this->actingAs($member)
+            ->get(route('club.profile', $club))
+            ->assertOk()
+            ->assertSee('club-action-menu', false)
+            ->assertSee('Вы уверены, что хотите покинуть клуб?')
+            ->assertDontSee('value="Присоединиться"', false);
+
+        $this->post(route('club.leave', $club))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('club_memberships', [
+            'user_id' => $member->id,
+            'club_id' => $club->id,
+        ]);
+        $this->assertSame(UserRole::USER, $member->fresh()->role);
+    }
+
     public function test_club_manager_can_ban_a_user_with_the_combined_action_form(): void
     {
         $club = $this->user('club', UserRole::CLUB);
         $target = $this->user('target', UserRole::USER);
+
+        $this->actingAs($club)
+            ->get(route('club.profile', $club))
+            ->assertOk()
+            ->assertSee('Забанить пользователя')
+            ->assertDontSee('Забанить обычного пользователя');
 
         $this->actingAs($club)
             ->post(route('club.assignRole', $club), [
@@ -196,6 +227,50 @@ class ClubModerationPermissionsTest extends TestCase
         ])->assertForbidden();
 
         $this->assertFalse((bool) $otherModerator->fresh()->club_banned);
+    }
+
+    public function test_club_and_its_moderator_can_unban_regular_users_from_that_club(): void
+    {
+        $club = $this->user('club', UserRole::CLUB);
+        $moderator = $this->user('moderator', UserRole::CLUB_MODERATOR, $club->id);
+        $ownerTarget = $this->user('owner-target', UserRole::USER);
+        $moderatorTarget = $this->user('moderator-target', UserRole::USER);
+
+        foreach ([$ownerTarget, $moderatorTarget] as $target) {
+            $target->forceFill([
+                'club_banned' => true,
+                'club_ban_club_id' => $club->id,
+                'club_ban_reason' => 'Нарушение правил клуба',
+            ])->save();
+        }
+
+        $this->actingAs($club)
+            ->post(route('club.assignRole', $club), [
+                'email' => $ownerTarget->email,
+                'action' => 'unban',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $ownerTarget->id,
+            'club_banned' => false,
+            'club_ban_club_id' => null,
+            'club_ban_reason' => null,
+        ]);
+
+        $this->actingAs($moderator)
+            ->post(route('club.assignRole', $club), [
+                'email' => $moderatorTarget->email,
+                'action' => 'unban',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $moderatorTarget->id,
+            'club_banned' => false,
+            'club_ban_club_id' => null,
+            'club_ban_reason' => null,
+        ]);
     }
 
     public function test_ban_action_requires_a_reason(): void

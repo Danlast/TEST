@@ -17,7 +17,9 @@ use Illuminate\Support\Collection;
  */
 class Comment extends Model
 {
-     protected $guarded = [];
+    public const DELETED_CONTENT = 'Комментарий был удален';
+
+    protected $guarded = [];
 
     public function user()
     {

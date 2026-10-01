@@ -23,11 +23,11 @@
                 @if(auth()->user()->canEditClubProfile($club))
                     <a href="{{ route('club.edit', $club->id) }}" class="btn btn-outline">Редактировать профиль</a>
                 @endif
-                @if(auth()->user()->role === \App\Enums\UserRole::CLUB_MODERATOR && (int) auth()->user()->club_id === (int) $club->id)
+                @if($isClubModerator || $isMember)
                     <details class="club-action-menu">
                         <summary aria-label="Действия с клубом">&hellip;</summary>
                         <div class="club-action-menu-panel">
-                            <form action="{{ route('club.leave', $club) }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите покинуть клуб и отказаться от роли модератора?');">
+                            <form action="{{ route('club.leave', $club) }}" method="POST" onsubmit="return confirm('{{ $isClubModerator ? 'Вы уверены, что хотите покинуть клуб и отказаться от роли модератора?' : 'Вы уверены, что хотите покинуть клуб?' }}');">
                                 @csrf
                                 <button type="submit" class="btn btn-delete">Покинуть клуб</button>
                             </form>
@@ -46,20 +46,11 @@
     @endif
 
     @auth
-        @if(auth()->user()->id !== $club->id)
-            @if(auth()->user()->role === \App\Enums\UserRole::CLUB_MODERATOR && (int) auth()->user()->club_id === (int) $club->id)
-                {{-- The moderator exit action is available in the club actions menu above. --}}
-            @elseif(auth()->user()->club_id === $club->id)
-                <form action="{{ route('club.leave', $club->id) }}" method="POST" class="flex">
-                    @csrf
-                    <input type="submit" class="btn btn-delete" value="Отписаться">
-                </form>
-            @else
-                <form action="{{ route('club.join', $club->id) }}" method="POST" class="flex">
-                    @csrf
-                    <input type="submit" class="btn btn-primary" value="Присоединиться">
-                </form>
-            @endif
+        @if(auth()->id() !== $club->id && ! $isMember && ! $isClubModerator)
+            <form action="{{ route('club.join', $club->id) }}" method="POST" class="flex">
+                @csrf
+                <input type="submit" class="btn btn-primary" value="Присоединиться">
+            </form>
         @endif
     @endauth
 
@@ -112,7 +103,7 @@
 
     @if(auth()->user() && auth()->user()->canManageClub($club))
         <h3 class="club-participant-management">Управление участником</h3>
-        <form action="{{ route('club.assignRole', $club->id) }}" method="POST" class="form-group" onsubmit="return confirm('Применить действие к пользователю?');">
+        <form action="{{ route('club.assignRole', $club->id) }}" method="POST" class="form-group club-member-management-form" onsubmit="return confirm('Применить действие к пользователю?');">
             @csrf
             <label>Email пользователя</label>
             <input type="email" name="email" value="{{ old('email') }}" placeholder="user@example.com" required>
@@ -122,7 +113,8 @@
                     <option value="club_moderator" @selected(old('action') === 'club_moderator')>Назначить модератором</option>
                     <option value="user" @selected(old('action') === 'user')>Снять роль модератора</option>
                 @endif
-                <option value="ban" @selected(old('action') === 'ban')>Забанить обычного пользователя</option>
+                <option value="ban" @selected(old('action') === 'ban')>Забанить пользователя</option>
+                <option value="unban" @selected(old('action') === 'unban')>Разбанить пользователя</option>
             </select>
             <div data-ban-reason hidden>
                 <label for="club-ban-reason">Причина бана</label>

@@ -11,8 +11,6 @@ use Illuminate\Support\Facades\Auth;
 
 class CommentController extends Controller
 {
-    private const DELETED_CONTENT = 'Комментарий был удален';
-
     public static function createdResponse(Request $request, Comment $comment, string $message, int $depth = 0)
     {
         if (! $request->expectsJson()) {
@@ -41,7 +39,7 @@ class CommentController extends Controller
         $user = Auth::user();
 
         if (! $user->canParticipateInClubEvent($event)) {
-            abort(403, 'Вы забанены в этом клубе и не можете оставлять комментарии под его мероприятиями.');
+            return back()->with('error', 'Вы были забанены в данном клубе.');
         }
 
         $comment = Comment::create([
@@ -101,7 +99,9 @@ class CommentController extends Controller
         ];
 
         if ($comment->event_id) {
-            abort_unless($user->canParticipateInClubEvent($comment->event), 403, 'Вы забанены в этом клубе и не можете отвечать на комментарии.');
+            if (! $user->canParticipateInClubEvent($comment->event)) {
+                return back()->with('error', 'Вы были забанены в данном клубе.');
+            }
         } elseif ($comment->profile_user_id) {
             $profileUser = $comment->profileUser;
             abort_unless($profileUser, 404);
@@ -114,7 +114,9 @@ class CommentController extends Controller
         } elseif ($comment->article_id) {
             $article = $comment->article;
             abort_unless($article, 404);
-            abort_unless($user->canAccessClubContent($article->club_id), 403, 'Вы забанены в этом клубе и не можете отвечать на комментарии.');
+            if (! $user->canAccessClubContent($article->club_id)) {
+                return back()->with('error', 'Вы были забанены в данном клубе.');
+            }
         } else {
             abort(404);
         }
@@ -155,7 +157,7 @@ class CommentController extends Controller
             'content' => 'required|string|max:1000',
         ]);
 
-        abort_if($comment->content === self::DELETED_CONTENT, 404);
+        abort_if($comment->content === Comment::DELETED_CONTENT, 404);
 
         $comment->update([
             'content' => $request->input('content'),
@@ -181,7 +183,7 @@ class CommentController extends Controller
         $hasReplies = $comment->replies()->exists() || $comment->replyReferences()->exists();
 
         if ($hasReplies) {
-            $comment->update(['content' => self::DELETED_CONTENT]);
+            $comment->update(['content' => Comment::DELETED_CONTENT]);
         } else {
             $comment->delete();
         }

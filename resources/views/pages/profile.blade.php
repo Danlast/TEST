@@ -14,7 +14,7 @@
                 @endif
             </div>
             <div class="profile-identity-text">
-                <h2>Профиль: {{ $user->username }}</h2>
+                <h2>{{ $user->username }}</h2>
                 <p class="profile-email">{{ $user->email }}</p>
                 @if($user->role === \App\Enums\UserRole::CLUB_MODERATOR && $user->club)
                     <p class="profile-club">Модератор клуба: <a href="{{ route('club.profile', $user->club) }}">{{ $user->club->username }}</a></p>
