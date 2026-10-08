@@ -59,7 +59,7 @@
         </div>
     </form>
 
-    <div class="admin-user-list">
+    <div class="admin-user-list" id="admin-user-list">
         @forelse($users as $user)
             <article class="admin-user-row">
                 <div class="admin-user-info">
@@ -104,11 +104,11 @@
         @endforelse
     </div>
 
-    {{ $users->links() }}
+    <x-load-more-button :paginator="$users" target="#admin-user-list" />
 
     <hr>
     <h3>Журнал действий</h3>
-    <div class="admin-audit-list">
+    <div class="admin-audit-list" id="admin-audit-list">
         @forelse($auditLogs as $log)
             <div class="admin-audit-row">
                 <strong>{{ $log->action }}</strong>
@@ -119,6 +119,6 @@
             <p class="empty-hint">Действий пока нет.</p>
         @endforelse
     </div>
-    {{ $auditLogs->links() }}
+    <x-load-more-button :paginator="$auditLogs" target="#admin-audit-list" />
 </section>
 @endsection

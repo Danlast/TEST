@@ -64,10 +64,10 @@ class AccountController extends Controller
         return redirect('/')->with('success', 'Вы вышли из системы');
     }
 
-    public function profile() {
+    public function profile(Request $request) {
         $user = Auth::user();
 
-        return view('pages.profile', $this->profileData($user));
+        return view('pages.profile', $this->profileData($user, $request));
     }
 
     public function editProfile()
@@ -161,7 +161,7 @@ class AccountController extends Controller
         return response()->file($filePath);
     }
 
-    public function showUserProfile($id)
+    public function showUserProfile(Request $request, $id)
     {
         $user = User::findOrFail($id);
 
@@ -169,20 +169,39 @@ class AccountController extends Controller
             return response()->view('pages.profile_hidden', [], 404);
         }
 
-        return view('pages.user_profile', $this->profileData($user));
+        return view('pages.user_profile', $this->profileData($user, $request));
     }
 
-    private function profileData(User $user): array
+    private function profileData(User $user, Request $request): array
     {
         $user->loadMissing('club');
 
         return [
             'user' => $user,
-            'events' => $user->registeredEvents()->get(),
-            'bookedExchanges' => \App\Models\BookExchange::where('booked_by_user_id', $user->id)->latest()->get(),
-            'joinedClubs' => $user->joinedClubs()->orderBy('username')->get(),
-            'clubEvents' => $user->clubEvents()->orderByDesc('created_at')->get(),
-            'comments' => Comment::nestReplies($user->profileComments()->with(['user', 'repliedTo.user'])->oldest()->get()),
+            'events' => $user->registeredEvents()
+                ->with('club')
+                ->orderByDesc('event_registrations.created_at')
+                ->paginate(10, ['events.*'], 'registered_events_page')
+                ->appends($request->query()),
+            'bookedExchanges' => \App\Models\BookExchange::query()
+                ->where('booked_by_user_id', $user->id)
+                ->latest()
+                ->paginate(10, ['*'], 'booked_exchanges_page')
+                ->appends($request->query()),
+            'joinedClubs' => $user->joinedClubs()
+                ->orderBy('username')
+                ->paginate(10, ['users.*'], 'joined_clubs_page')
+                ->appends($request->query()),
+            'clubEvents' => $user->clubEvents()
+                ->with('club')
+                ->orderByDesc('date')
+                ->paginate(10, ['events.*'], 'club_events_page')
+                ->appends($request->query()),
+            'comments' => Comment::paginateThreads(
+                $user->profileComments()->with(['user', 'repliedTo.user']),
+                10,
+                'profile_comments_page'
+            ),
         ];
     }
 

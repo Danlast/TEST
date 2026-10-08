@@ -19,7 +19,7 @@
             <input type="submit" class="btn btn-outline form-action" value="Найти">
         </form>
 
-        <div class="object-grid">
+        <div class="object-grid" id="club-index-list">
             @if($clubs->isEmpty())
                 <p>Клубов пока нет.</p>
             @else
@@ -34,6 +34,6 @@
                 @endforeach
             @endif
         </div>
-        {{ $clubs->links() }}
+        <x-load-more-button :paginator="$clubs" target="#club-index-list" />
     </section>
 @endsection

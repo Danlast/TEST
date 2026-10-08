@@ -28,11 +28,18 @@ class EventController extends Controller
         public function start(Request $request)
     {
         [$eventsQuery, $query, $place, $dateFrom, $dateTo, $sort, $selectedTags] = $this->filteredEvents($request);
-        $events = $eventsQuery->with('club')->get();
+            $events = (clone $eventsQuery)
+                ->with('club')
+                ->paginate(12)
+                ->appends($request->query());
+            $mapEvents = (clone $eventsQuery)
+                ->with('club')
+                ->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->limit(100)
+                ->get();
 
-        $mapMarkers = $events->filter(function ($event) {
-            return $event->latitude && $event->longitude;
-        })->map(function ($event) {
+            $mapMarkers = $mapEvents->map(function ($event) {
             return [
                 'id'        => $event->id,
                 'title'     => $event->title,
@@ -116,15 +123,24 @@ class EventController extends Controller
         return redirect('/')->with('success', 'Мероприятие создано.');
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $event = Event::with(['club', 'registrations.user'])->findOrFail($id);
-        $comments = Comment::nestReplies($event->comments()->with(['user', 'repliedTo.user'])->oldest()->get());
+        $event = Event::with('club')->withCount('registrations')->findOrFail($id);
+        $registrations = $event->registrations()
+            ->with('user')
+            ->orderBy('id')
+            ->paginate(10, ['*'], 'attendees_page')
+            ->appends($request->query());
+        $comments = Comment::paginateThreads(
+            $event->comments()->with(['user', 'repliedTo.user']),
+            10,
+            'event_comments_page'
+        );
         $isBannedFromClub = Auth::check()
             && $event->club_id
             && Auth::user()->isBannedFromClub((int) $event->club_id);
 
-        return view('pages.events.event_show', compact('event', 'comments', 'isBannedFromClub'));
+        return view('pages.events.event_show', compact('event', 'registrations', 'comments', 'isBannedFromClub'));
     }
 
     public function edit($id)
@@ -239,6 +255,7 @@ class EventController extends Controller
 
         $eventsQuery = Event::query()
             ->withCount('registrations')
+            ->whereDate('date', '>=', now()->toDateString())
             ->whereRaw('(select count(*) from event_registrations where event_registrations.event_id = events.id) < coalesce(events.max_entries, 10)')
             ->when($query !== '', function ($q) use ($query) {
                 $q->where(function ($sub) use ($query) {

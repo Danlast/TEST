@@ -9,7 +9,7 @@
             </div>
             <a href="{{ route('exchange.create') }}" class="btn btn-primary">Выложить объявление</a>
         </div>
-        <div class="object-grid">
+        <div class="object-grid" id="exchange-feed">
             @forelse($exchanges as $exchange)
                 <article class="card exchange-card">
                     <div class="card-content exchange-card-content">
@@ -37,7 +37,7 @@
             @endforelse
         </div>
 
-        {{ $exchanges->links() }}
+        <x-load-more-button :paginator="$exchanges" target="#exchange-feed" />
 
         <div class="container-map section-spaced">
             <div class="map-section">

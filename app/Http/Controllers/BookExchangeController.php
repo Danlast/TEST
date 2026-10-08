@@ -16,6 +16,8 @@ class BookExchangeController extends Controller
         $exchangeMarkers = BookExchange::query()
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
+            ->orderByDesc('created_at')
+            ->limit(100)
             ->get(['id', 'title', 'latitude', 'longitude', 'place']);
 
         return view('pages.books.exchange_index', compact('exchanges', 'exchangeMarkers'));

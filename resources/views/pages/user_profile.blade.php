@@ -36,18 +36,19 @@
     @if($events->isEmpty())
         <p>Пользователь ещё не записался на мероприятия.</p>
     @else
-        <div class="favorite-list">
+        <div class="favorite-list" id="public-profile-events">
             @foreach($events as $event)
                 <div class="fav-item">
                     <a href="{{ route('event.show', $event->id) }}">{{ $event->title }}</a>
                 </div>
             @endforeach
         </div>
+        <x-load-more-button :paginator="$events" target="#public-profile-events" />
     @endif
 
     <hr>
     <h3>Забронированные обмены</h3>
-    <div class="favorite-list">
+    <div class="favorite-list" id="public-profile-booked-exchanges">
         @if($bookedExchanges->isEmpty())
             <p>Пользователь ещё не бронировал обмены.</p>
         @else
@@ -58,10 +59,11 @@
             @endforeach
         @endif
     </div>
+    <x-load-more-button :paginator="$bookedExchanges" target="#public-profile-booked-exchanges" />
 
     <hr>
     <h3>Клубы</h3>
-    <div class="favorite-list">
+    <div class="favorite-list" id="public-profile-clubs">
         @if($joinedClubs->isEmpty())
             <p>Пользователь пока не состоит ни в одном клубе.</p>
         @else
@@ -72,10 +74,11 @@
             @endforeach
         @endif
     </div>
+    <x-load-more-button :paginator="$joinedClubs" target="#public-profile-clubs" />
 
     <hr>
     <h3>Мероприятия клубов пользователя</h3>
-    <div class="favorite-list">
+    <div class="favorite-list" id="public-profile-club-events">
         @if($clubEvents->isEmpty())
             <p>У клубов пользователя пока нет мероприятий.</p>
         @else
@@ -86,6 +89,7 @@
             @endforeach
         @endif
     </div>
+    <x-load-more-button :paginator="$clubEvents" target="#public-profile-club-events" />
 
     <hr>
     <div data-comment-section>
@@ -98,7 +102,7 @@
         </form>
     @endauth
 
-    <div class="comments-list" data-comments-list>
+    <div class="comments-list" data-comments-list id="public-profile-comments">
         @if($comments->isNotEmpty())
             @foreach($comments as $comment)
                 <x-comment-item :comment="$comment" :depth="0" />
@@ -109,6 +113,7 @@
         <p class="empty-hint">Комментариев пока нет.</p>
     @endif
     </div>
+    <x-load-more-button :paginator="$comments" target="#public-profile-comments" />
 </section>
 
 @endsection

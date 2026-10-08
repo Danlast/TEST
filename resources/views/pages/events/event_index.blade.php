@@ -45,13 +45,13 @@
             </div>
         </form>
 
-        <div class="object-grid">
+        <div class="object-grid" id="event-index-list">
             @forelse($events as $event)
                 <x-event-card :event="$event" />
             @empty
                 <p>Мероприятий не найдено.</p>
             @endforelse
         </div>
-        {{ $events->links() }}
+        <x-load-more-button :paginator="$events" target="#event-index-list" />
     </section>
 @endsection

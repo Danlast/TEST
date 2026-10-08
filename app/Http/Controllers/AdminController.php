@@ -52,6 +52,7 @@ class AdminController extends Controller
             'clubs' => User::query()
                 ->where('role', UserRole::CLUB)
                 ->orderBy('username')
+                ->limit(100)
                 ->get(['id', 'username']),
             'auditLogs' => $auditLogs,
         ]);

@@ -62,7 +62,7 @@
             </form>
         @endauth
 
-        <div class="comments-list" data-comments-list>
+        <div class="comments-list" data-comments-list id="article-comments">
             @if($comments->isNotEmpty())
             @foreach($comments as $comment)
                     <x-comment-item :comment="$comment" :depth="0" />
@@ -72,6 +72,7 @@
         @if($comments->isEmpty())
             <p class="empty-hint">Комментариев пока нет.</p>
         @endif
+        <x-load-more-button :paginator="$comments" target="#article-comments" />
     </div>
 </section>
 @endsection

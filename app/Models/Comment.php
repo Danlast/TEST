@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * @property int $id
@@ -59,6 +60,41 @@ class Comment extends Model
     public function replies()
     {
         return $this->hasMany(self::class, 'parent_id')->oldest();
+    }
+
+    public static function paginateThreads($query, int $perPage, string $pageName): LengthAwarePaginator
+    {
+        $threads = $query
+            ->whereNull('parent_id')
+            ->oldest()
+            ->paginate($perPage, ['*'], $pageName)
+            ->appends(request()->query());
+
+        $comments = $threads->getCollection();
+        $parentIds = $comments->modelKeys();
+
+        while ($parentIds !== []) {
+            $replies = collect();
+            self::query()
+                ->with(['user', 'repliedTo.user'])
+                ->whereIn('parent_id', $parentIds)
+                ->oldest()
+                ->chunkById(100, function ($batch) use (&$replies) {
+                    $replies = $replies->concat($batch);
+                });
+
+            if ($replies->isEmpty()) {
+                break;
+            }
+
+            $comments = $comments->concat($replies);
+            $parentIds = $replies->pluck('id')->all();
+        }
+
+        $comments->loadMissing(['user', 'repliedTo.user']);
+        $threads->setCollection(self::nestReplies($comments));
+
+        return $threads;
     }
 
     public static function nestReplies(Collection $comments): Collection

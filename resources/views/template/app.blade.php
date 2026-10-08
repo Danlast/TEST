@@ -166,5 +166,46 @@
             }
         });
     </script>
+    <script>
+        document.addEventListener('click', async (event) => {
+            const button = event.target.closest('[data-load-more]');
+            if (!button || button.disabled) return;
+
+            const targetSelector = button.dataset.target;
+            const target = document.querySelector(targetSelector);
+            if (!target) return;
+
+            button.disabled = true;
+            button.setAttribute('aria-busy', 'true');
+
+            try {
+                const response = await fetch(button.dataset.url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html' },
+                    credentials: 'same-origin',
+                });
+                if (!response.ok) throw new Error('Не удалось загрузить записи.');
+
+                const documentFragment = new DOMParser().parseFromString(await response.text(), 'text/html');
+                const nextTarget = documentFragment.querySelector(targetSelector);
+                if (!nextTarget) throw new Error('Не удалось найти список записей.');
+
+                Array.from(nextTarget.children).forEach((item) => target.append(item));
+                const nextButton = Array.from(documentFragment.querySelectorAll('[data-load-more]'))
+                    .find((item) => item.dataset.target === targetSelector);
+
+                if (nextButton) {
+                    button.dataset.url = nextButton.dataset.url;
+                    button.disabled = false;
+                    button.removeAttribute('aria-busy');
+                } else {
+                    button.remove();
+                }
+            } catch (error) {
+                button.disabled = false;
+                button.removeAttribute('aria-busy');
+                button.textContent = 'Не удалось загрузить. Повторить';
+            }
+        });
+    </script>
 </body>
 </html>

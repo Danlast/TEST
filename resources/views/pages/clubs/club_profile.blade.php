@@ -57,11 +57,12 @@
     <hr>
     <h3>Модераторы клуба</h3>
     @if($moderators->isNotEmpty())
-        <ul class="club-moderator-list">
+        <ul class="club-moderator-list" id="club-moderators">
             @foreach($moderators as $moderator)
                 <li><a href="{{ route('user.profile', $moderator) }}">{{ $moderator->username }}</a></li>
             @endforeach
         </ul>
+        <x-load-more-button :paginator="$moderators" target="#club-moderators" />
     @else
         <p class="empty-hint">Модераторов пока нет.</p>
     @endif
@@ -90,16 +91,14 @@
         </div>
     </form>
 
-    <div class="object-grid">
+    <div class="object-grid" id="club-events">
         @forelse($events as $event)
             <x-event-card :event="$event" />
         @empty
             <p>{{ $eventQuery ? 'По вашему запросу мероприятий не найдено.' : 'Мероприятий пока нет.' }}</p>
         @endforelse
     </div>
-    @if($events->hasPages())
-        {{ $events->links() }}
-    @endif
+    <x-load-more-button :paginator="$events" target="#club-events" />
 
     @if(auth()->user() && auth()->user()->canManageClub($club))
         <h3 class="club-participant-management">Управление участником</h3>
@@ -155,13 +154,14 @@
     </form>
 
     @if($members->isNotEmpty())
-        <ul>
+        <ul id="club-members">
             @foreach($members as $member)
                 <li>
                     <a href="{{ route('user.profile', $member->id) }}">{{ $member->username }}</a>
                 </li>
             @endforeach
         </ul>
+        <x-load-more-button :paginator="$members" target="#club-members" />
     @else
         <p>Участников пока нет.</p>
     @endif
@@ -177,7 +177,7 @@
         </form>
     @endauth
 
-    <div class="comments-list" data-comments-list>
+    <div class="comments-list" data-comments-list id="club-comments">
         @if($comments->isNotEmpty())
             @foreach($comments as $comment)
                 <x-comment-item :comment="$comment" :depth="0" />
@@ -188,5 +188,6 @@
         <p class="empty-hint">Комментариев пока нет.</p>
     @endif
     </div>
+    <x-load-more-button :paginator="$comments" target="#club-comments" />
 </section>
 @endsection

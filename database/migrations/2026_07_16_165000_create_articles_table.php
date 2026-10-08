@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->json('tags')->nullable();
             $table->boolean('is_published')->default(true);
+            $table->string('banner')->nullable();
             $table->timestamps();
         });
     }

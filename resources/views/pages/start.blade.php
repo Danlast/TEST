@@ -46,12 +46,13 @@
                 </div>
             </form>
 
-            @if($events->count() > 0)
-                <div class="object-grid">
+            @if($events->isNotEmpty())
+                <div class="object-grid" id="home-event-feed">
                     @foreach ($events as $event)
                         <x-event-card :event="$event" />
                     @endforeach
                 </div>
+                <x-load-more-button :paginator="$events" target="#home-event-feed" />
             @else
                 <div class="empty-state">
                     <h3>Мероприятий не найдено</h3>

@@ -34,7 +34,7 @@
     <hr>
 
     <h3>Мероприятия, на которые вы записаны</h3>
-    <div class="favorite-list">
+    <div class="favorite-list" id="profile-registered-events">
         @if($events->isEmpty())
             <p>Вы ещё не записались на мероприятия.</p>
         @else
@@ -49,11 +49,12 @@
             @endforeach
         @endif
     </div>
+    <x-load-more-button :paginator="$events" target="#profile-registered-events" />
 
     <hr>
 
     <h3>Забронированные обмены</h3>
-    <div class="favorite-list">
+    <div class="favorite-list" id="profile-booked-exchanges">
         @if($bookedExchanges->isEmpty())
             <p>Вы ещё не бронировали обмены.</p>
         @else
@@ -68,11 +69,12 @@
             @endforeach
         @endif
     </div>
+    <x-load-more-button :paginator="$bookedExchanges" target="#profile-booked-exchanges" />
 
     <hr>
 
     <h3>Клубы, в которые вы вступили</h3>
-    <div class="favorite-list">
+    <div class="favorite-list" id="profile-joined-clubs">
         @if($joinedClubs->isEmpty())
             <p>Вы пока не вступили ни в один клуб.</p>
         @else
@@ -83,11 +85,12 @@
             @endforeach
         @endif
     </div>
+    <x-load-more-button :paginator="$joinedClubs" target="#profile-joined-clubs" />
 
     <hr>
 
     <h3>Мероприятия клубов, к которым вы присоединились</h3>
-    <div class="favorite-list">
+    <div class="favorite-list" id="profile-club-events">
         @if($clubEvents->isEmpty())
             <p>У ваших клубов пока нет мероприятий.</p>
         @else
@@ -98,6 +101,7 @@
             @endforeach
         @endif
     </div>
+    <x-load-more-button :paginator="$clubEvents" target="#profile-club-events" />
 
     <hr>
 
@@ -111,7 +115,7 @@
         </form>
     @endauth
 
-    <div class="comments-list" data-comments-list>
+    <div class="comments-list" data-comments-list id="profile-comments">
         @if($comments->isNotEmpty())
             @foreach($comments as $comment)
                 <x-comment-item :comment="$comment" :depth="0" />
@@ -122,6 +126,7 @@
         <p class="empty-hint">Комментариев пока нет.</p>
     @endif
     </div>
+    <x-load-more-button :paginator="$comments" target="#profile-comments" />
 </section>
 
 @endsection

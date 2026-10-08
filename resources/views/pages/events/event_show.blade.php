@@ -55,19 +55,29 @@
 
         <div class="form-group event-attendees-section">
             <h3>Список записавшихся</h3>
-            @if($event->registrations->isNotEmpty())
-                <ul class="event-attendee-list" data-attendee-list>
-                    @foreach($event->registrations as $registration)
-                        <li @if($loop->iteration > 10) hidden @endif>
+            @if($registrations->isNotEmpty())
+                <ul class="event-attendee-list" id="event-attendees">
+                    @foreach($registrations as $registration)
+                        <li>
                             <a href="{{ route('user.profile', $registration->user->id) }}">
                                 {{ $registration->user->username ?? $registration->user->email }}
                             </a>
+                            @auth
+                                @if(auth()->user()->canManageEvent($event) && auth()->id() !== $registration->user_id)
+                                    <details class="event-registration-actions">
+                                        <summary aria-label="Управление записью пользователя">Действия</summary>
+                                        <form action="{{ route('favorites.destroy', $event->id) }}" method="POST" class="event-registration-remove-form">
+                                            @csrf
+                                            <input type="hidden" name="user_id" value="{{ $registration->user_id }}">
+                                            <button type="submit" class="btn btn-delete" onclick="return confirm('Удалить запись пользователя?');">Удалить запись</button>
+                                        </form>
+                                    </details>
+                                @endif
+                            @endauth
                         </li>
                     @endforeach
                 </ul>
-                @if($event->registrations->count() > 10)
-                    <button type="button" class="btn btn-outline attendee-show-more" data-attendee-show-more>Показать ещё</button>
-                @endif
+                <x-load-more-button :paginator="$registrations" target="#event-attendees" />
             @else
                 <p>Пока никто не записался.</p>
             @endif
@@ -87,7 +97,7 @@
                 @endif
             @endif
 
-            <div class="comments-list" data-comments-list>
+            <div class="comments-list" data-comments-list id="event-comments">
                 @if($comments->isNotEmpty())
                     @foreach($comments as $comment)
                         <x-comment-item :comment="$comment" :depth="0" :allow-replies="!$isBannedFromClub" />
@@ -97,18 +107,9 @@
             @if($comments->isEmpty())
                 <p class="empty-hint">Комментариев пока нет.</p>
             @endif
+            <x-load-more-button :paginator="$comments" target="#event-comments" />
         </div>
     </div>
 </section>
-
-<script>
-    document.querySelector('[data-attendee-show-more]')?.addEventListener('click', function () {
-        const list = document.querySelector('[data-attendee-list]');
-        const hiddenRows = [...list.querySelectorAll('li[hidden]')].slice(0, 10);
-        hiddenRows.forEach((row) => { row.hidden = false; });
-
-        if (!list.querySelector('li[hidden]')) this.remove();
-    });
-</script>
 
 @endsection

@@ -14,16 +14,16 @@ return new class extends Migration
         Schema::create('events', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->string('date');
+            $table->dateTime('date');
             $table->string('place');
             $table->decimal('latitude', 10, 7);
             $table->decimal('longitude', 10, 7);
-            $table->string('description');
+            $table->text('description');
             $table->json('tags')->nullable();
             $table->integer('min_entries')->default(0);
             $table->integer('max_entries')->default(10);
-            $table->unsignedBigInteger('club_id')->nullable();
-            $table->unsignedBigInteger('author_id')->nullable();
+            $table->foreignId('club_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('author_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('image')->default('');
             $table->timestamps();
         });

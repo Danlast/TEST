@@ -83,10 +83,12 @@ class ClubController extends Controller
                 });
             })
             ->orderBy('username')
-            ->get();
+            ->paginate(20, ['users.*'], 'members_page')
+            ->appends($request->query());
 
         $eventQuery = $request->input('event');
         $events = Event::where('club_id', $club->id)
+            ->whereDate('date', '>=', now()->toDateString())
             ->when($eventQuery, function ($q) use ($eventQuery) {
                 $q->where(function ($sub) use ($eventQuery) {
                     $sub->where('title', 'like', '%' . $eventQuery . '%')
@@ -94,16 +96,21 @@ class ClubController extends Controller
                 });
             })
             ->orderByDesc('created_at')
-            ->paginate(6)
+            ->paginate(6, ['*'], 'events_page')
             ->appends($request->query());
 
         $moderators = User::query()
             ->where('role', UserRole::CLUB_MODERATOR)
             ->where('club_id', $club->id)
             ->orderBy('username')
-            ->get(['id', 'username']);
+            ->paginate(20, ['id', 'username'], 'moderators_page')
+            ->appends($request->query());
 
-        $comments = \App\Models\Comment::nestReplies($club->profileComments()->with(['user', 'repliedTo.user'])->oldest()->get());
+        $comments = Comment::paginateThreads(
+            $club->profileComments()->with(['user', 'repliedTo.user']),
+            10,
+            'club_comments_page'
+        );
 
         return view('pages.clubs.club_profile', compact('club', 'members', 'moderators', 'events', 'comments', 'query', 'eventQuery', 'isMember', 'isClubModerator'));
     }
@@ -365,22 +372,22 @@ class ClubController extends Controller
                 ->whereIn('event_id', $clubEventIds)
                 ->delete();
 
-            $comments = Comment::query()
+            Comment::query()
                 ->where('user_id', $targetUser->id)
                 ->where(function ($query) use ($club, $clubEventIds, $clubArticleIds) {
                     $query->where('profile_user_id', $club->id)
                         ->orWhereIn('event_id', $clubEventIds)
                         ->orWhereIn('article_id', $clubArticleIds);
                 })
-                ->get();
-
-            foreach ($comments as $comment) {
-                if ($comment->replies()->exists() || $comment->replyReferences()->exists()) {
-                    $comment->update(['content' => Comment::DELETED_CONTENT]);
-                } else {
-                    $comment->delete();
-                }
-            }
+                ->chunkById(100, function ($comments) {
+                    foreach ($comments as $comment) {
+                        if ($comment->replies()->exists() || $comment->replyReferences()->exists()) {
+                            $comment->update(['content' => Comment::DELETED_CONTENT]);
+                        } else {
+                            $comment->delete();
+                        }
+                    }
+                });
 
             AuditLog::create([
                 'actor_id' => Auth::id(),

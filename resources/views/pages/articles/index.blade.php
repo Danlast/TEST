@@ -44,7 +44,7 @@
             </div>
         </form>
 
-        <div class="article-list">
+        <div class="article-list" id="article-index-list">
             @forelse($articles as $article)
                 <article class="card article-card">
                     <div class="card-content article-card-content">
@@ -86,6 +86,6 @@
                 <p>Пока нет опубликованных статей.</p>
             @endforelse
         </div>
-        {{ $articles->links() }}
+        <x-load-more-button :paginator="$articles" target="#article-index-list" />
     </section>
 @endsection

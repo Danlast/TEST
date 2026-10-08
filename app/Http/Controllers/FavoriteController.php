@@ -60,12 +60,39 @@ class FavoriteController extends Controller
         return back()->with('success', 'Вы успешно записались на мероприятие.');
     }
 
-    public function destroy($eventId)
+    public function destroy(Request $request, $eventId)
     {
-        $event = Event::findOrFail($eventId);
-        $userId = Auth::id();
+        $event = Event::with('club')->findOrFail($eventId);
+        $actor = Auth::user();
 
-        EventRegistration::where('user_id', $userId)->where('event_id', $eventId)->delete();
+        if ($request->filled('user_id')) {
+            abort_unless($actor && $actor->canManageEvent($event), 403);
+
+            $data = $request->validate([
+                'user_id' => ['required', 'integer', 'exists:users,id'],
+            ]);
+
+            abort_if((int) $data['user_id'] === (int) $actor->id, 403);
+
+            $registration = EventRegistration::query()
+                ->where('event_id', $event->id)
+                ->where('user_id', $data['user_id'])
+                ->first();
+
+            if (! $registration) {
+                return back()->with('error', 'Пользователь уже не записан на мероприятие.');
+            }
+
+            $registration->delete();
+
+            return back()->with('success', 'Запись пользователя удалена.');
+        }
+
+        abort_unless((bool) $actor, 403);
+        EventRegistration::query()
+            ->where('user_id', $actor->id)
+            ->where('event_id', $event->id)
+            ->delete();
 
         return back()->with('success', 'Вы отменили запись на мероприятие.');
     }

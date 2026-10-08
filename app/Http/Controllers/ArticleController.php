@@ -144,7 +144,11 @@ class ArticleController extends Controller
         $article->load(['user', 'club']);
         $article->loadCount(['comments', 'likes', 'views']);
         $likedByUser = Auth::check() && $article->likes()->where('users.id', Auth::id())->exists();
-        $comments = Comment::nestReplies($article->comments()->with(['user', 'repliedTo.user'])->oldest()->get());
+        $comments = Comment::paginateThreads(
+            $article->comments()->with(['user', 'repliedTo.user']),
+            10,
+            'article_comments_page'
+        );
 
         return view('pages.articles.show', compact('article', 'comments', 'likedByUser'));
     }

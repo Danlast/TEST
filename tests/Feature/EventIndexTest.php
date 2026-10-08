@@ -106,4 +106,42 @@ class EventIndexTest extends TestCase
         $response->assertSee('Мероприятие в диапазоне');
         $response->assertDontSee('Мероприятие вне диапазона');
     }
+
+    public function test_event_lists_hide_past_dates_but_keep_today_and_future(): void
+    {
+        $club = User::create([
+            'username' => 'Date filter club',
+            'email' => 'date-filter-club@example.test',
+            'password' => 'password',
+            'role' => 'club',
+        ]);
+
+        foreach ([
+            'Прошедшее мероприятие' => now()->subDay(),
+            'Мероприятие сегодня' => now(),
+            'Будущее мероприятие' => now()->addDay(),
+        ] as $title => $date) {
+            Event::create([
+                'title' => $title,
+                'date' => $date->toDateTimeString(),
+                'place' => 'Казань',
+                'description' => 'Проверка даты',
+                'min_entries' => 0,
+                'max_entries' => 10,
+                'image' => '',
+                'latitude' => 55.7887,
+                'longitude' => 49.1221,
+                'club_id' => $club->id,
+                'author_id' => $club->id,
+            ]);
+        }
+
+        foreach ([route('event.index'), route('home')] as $url) {
+            $this->get($url)
+                ->assertOk()
+                ->assertDontSee('Прошедшее мероприятие')
+                ->assertSee('Мероприятие сегодня')
+                ->assertSee('Будущее мероприятие');
+        }
+    }
 }

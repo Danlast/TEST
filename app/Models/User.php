@@ -95,8 +95,8 @@ class User extends Authenticatable
     public function clubEvents()
     {
         return Event::query()
-            ->whereIn('club_id', $this->joinedClubs()->pluck('users.id'))
-            ->whereNotIn('id', $this->registeredEvents()->pluck('events.id'));
+            ->whereIn('club_id', $this->joinedClubs()->select('users.id'))
+            ->whereNotIn('id', $this->registeredEvents()->select('events.id'));
     }
 
     public function canAccessClubContent($clubId): bool
